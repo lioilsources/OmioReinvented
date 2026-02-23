@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import type { Destination, DistanceMode, TimeMode, PaxConfig, Child } from '@/shared/types';
+import type { DepartureTime, Destination, DistanceMode, TimeMode, PaxConfig, Child } from '@/shared/types';
 
 interface Origin {
   lat: number;
@@ -14,6 +14,7 @@ interface SearchState {
   distanceMode: DistanceMode;
   destination: Destination | null;
   timeMode: TimeMode | null;
+  departureTime: DepartureTime;
   pax: PaxConfig;
 
   // Actions
@@ -21,6 +22,7 @@ interface SearchState {
   setDistanceMode: (mode: DistanceMode) => void;
   setDestination: (destination: Destination | null) => void;
   setTimeMode: (mode: TimeMode | null) => void;
+  setDepartureTime: (time: DepartureTime) => void;
   setAdults: (count: number) => void;
   addChild: () => void;
   removeChild: (index: number) => void;
@@ -37,12 +39,14 @@ export const useSearchStore = create<SearchState>((set, get) => ({
   distanceMode: 'medium',
   destination: null,
   timeMode: null,
+  departureTime: 'morning',
   pax: { adults: 1, children: [] },
 
   setOrigin: (origin) => set({ origin }),
   setDistanceMode: (distanceMode) => set({ distanceMode, destination: null, timeMode: null }),
   setDestination: (destination) => set({ destination }),
   setTimeMode: (timeMode) => set({ timeMode }),
+  setDepartureTime: (departureTime) => set({ departureTime }),
 
   setAdults: (count) =>
     set((state) => ({
@@ -78,6 +82,7 @@ export const useSearchStore = create<SearchState>((set, get) => ({
       distanceMode: 'medium',
       destination: null,
       timeMode: null,
+      departureTime: 'morning',
       pax: { adults: 1, children: [] },
     }),
 

@@ -1,11 +1,11 @@
-import React, { useEffect } from 'react';
+import React from 'react';
 import { StyleSheet } from 'react-native';
 import MapView from 'react-native-maps';
 import { DestinationMarkers } from './DestinationMarkers';
 import { regionFromCoords } from '../utils/geo';
 import { getLatitudeDeltaForMode } from '../utils/modeConfig';
 import { useUIStore } from '@/stores/useUIStore';
-import type { Destination, DistanceMode } from '@/shared/types';
+import type { DepartureTime, Destination, DistanceMode } from '@/shared/types';
 
 interface MapViewContainerProps {
   mapRef: React.RefObject<MapView | null>;
@@ -14,6 +14,7 @@ interface MapViewContainerProps {
   mode: DistanceMode;
   destinations: Destination[];
   highlightedId: string | null;
+  departureTime: DepartureTime;
   onMarkerPress: (destination: Destination) => void;
 }
 
@@ -24,6 +25,7 @@ export function MapViewContainer({
   mode,
   destinations,
   highlightedId,
+  departureTime,
   onMarkerPress,
 }: MapViewContainerProps) {
   const setMapInteracting = useUIStore((s) => s.setMapInteracting);
@@ -43,6 +45,7 @@ export function MapViewContainer({
       <DestinationMarkers
         destinations={destinations}
         highlightedId={highlightedId}
+        departureTime={departureTime}
         onMarkerPress={onMarkerPress}
       />
     </MapView>

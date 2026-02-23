@@ -1,4 +1,5 @@
 export type {
+  DepartureTime,
   DistanceMode,
   TimeMode,
   TransportType,

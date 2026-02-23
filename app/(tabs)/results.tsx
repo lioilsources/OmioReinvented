@@ -18,6 +18,8 @@ export default function ResultsScreen() {
   const { data: journeys, isLoading } = useJourneys();
   const { sorted, sortMode, setSortMode } = useJourneySort(journeys);
 
+  const isBrowse = !destination;
+
   const handleBack = () => {
     setActiveSheet('destinations');
     router.push('/(tabs)/map');
@@ -29,7 +31,12 @@ export default function ResultsScreen() {
         <Pressable onPress={handleBack}>
           <Text style={styles.back}>← Explore</Text>
         </Pressable>
-        {destination && (
+        {isBrowse ? (
+          <View>
+            <Text style={styles.title}>Browse Journeys</Text>
+            <Text style={styles.subtitle}>Tomorrow</Text>
+          </View>
+        ) : (
           <View>
             <Text style={styles.title}>
               Prague → {destination.name}

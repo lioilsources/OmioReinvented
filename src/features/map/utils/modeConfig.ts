@@ -10,13 +10,13 @@ interface ModeConfig {
 export const modeConfigs: Record<DistanceMode, ModeConfig> = {
   short: {
     label: 'Short',
-    zoomDelta: 12,
+    zoomDelta: 9,
     radius: '20km',
     transports: ['tram', 'bus', 'scooter'],
   },
   medium: {
     label: 'Medium',
-    zoomDelta: 8,
+    zoomDelta: 6,
     radius: '300km',
     transports: ['train', 'flixbus'],
   },

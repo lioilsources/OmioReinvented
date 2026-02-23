@@ -40,9 +40,55 @@ function getDateForTimeMode(mode: TimeMode): string {
   }
 }
 
+function getTomorrowDate(): string {
+  const d = new Date();
+  d.setDate(d.getDate() + 1);
+  const pad = (n: number) => n.toString().padStart(2, '0');
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+}
+
 type RouteHandler = (url: URL) => Response;
 
 const routes: Record<string, RouteHandler> = {
+  '/api/journeys/browse': (url) => {
+    const mode = url.searchParams.get('mode') as DistanceMode | null;
+    const filtered = mode
+      ? mockDestinations.filter((d) => d.modes.includes(mode))
+      : mockDestinations;
+
+    const date = getTomorrowDate();
+
+    // Generate journeys per destination
+    const perDest = filtered.map((dest) => {
+      const journeys = generateJourneys(
+        dest.id,
+        dest.name,
+        dest.transportTypes,
+        dest.priceFrom,
+        date,
+      );
+      return journeys.map((j) => ({
+        ...j,
+        destinationName: dest.name,
+        destinationId: dest.id,
+      }));
+    });
+
+    // Round-robin interleave
+    const result: typeof perDest[0] = [];
+    const maxLen = Math.max(...perDest.map((arr) => arr.length), 0);
+    for (let i = 0; i < maxLen; i++) {
+      for (const arr of perDest) {
+        if (i < arr.length) result.push(arr[i]);
+      }
+    }
+
+    return new Response(JSON.stringify(result), {
+      status: 200,
+      headers: { 'Content-Type': 'application/json' },
+    });
+  },
+
   '/api/destinations': (url) => {
     const mode = url.searchParams.get('mode') as DistanceMode | null;
     let filtered = mockDestinations;

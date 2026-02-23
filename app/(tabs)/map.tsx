@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { View, StyleSheet } from 'react-native';
 import { MapViewContainer } from '@/features/map/components/MapViewContainer';
 import { ModeSelector } from '@/features/map/components/ModeSelector';
+import { DaytimeSlider } from '@/features/map/components/DaytimeSlider';
 import { OriginPill } from '@/features/map/components/OriginPill';
 import { MapBottomSheet } from '@/features/map/components/MapBottomSheet';
 import { useMapCamera } from '@/features/map/hooks/useMapCamera';
@@ -18,9 +19,11 @@ export default function MapScreen() {
   const origin = useSearchStore((s) => s.origin);
   const distanceMode = useSearchStore((s) => s.distanceMode);
   const destination = useSearchStore((s) => s.destination);
+  const departureTime = useSearchStore((s) => s.departureTime);
   const setOrigin = useSearchStore((s) => s.setOrigin);
   const setDistanceMode = useSearchStore((s) => s.setDistanceMode);
   const setDestination = useSearchStore((s) => s.setDestination);
+  const setDepartureTime = useSearchStore((s) => s.setDepartureTime);
   const setActiveSheet = useUIStore((s) => s.setActiveSheet);
 
   const { data: destinations = [], isLoading } = useDestinations(distanceMode);
@@ -67,11 +70,16 @@ export default function MapScreen() {
         mode={distanceMode}
         destinations={destinations}
         highlightedId={highlightedId}
+        departureTime={departureTime}
         onMarkerPress={handleMarkerPress}
       />
       <ModeSelector
         activeMode={distanceMode}
         onModeChange={handleModeChange}
+      />
+      <DaytimeSlider
+        value={departureTime}
+        onChange={setDepartureTime}
       />
       <OriginPill name={origin.name} />
       <MapBottomSheet

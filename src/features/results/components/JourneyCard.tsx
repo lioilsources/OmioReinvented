@@ -38,6 +38,9 @@ export function JourneyCard({ journey }: JourneyCardProps) {
 
   return (
     <View style={styles.card}>
+      {journey.destinationName && (
+        <Text style={styles.route}>Prague → {journey.destinationName}</Text>
+      )}
       <View style={styles.row}>
         <View style={styles.times}>
           <Text style={styles.time}>{formatTime(journey.departure)}</Text>
@@ -139,6 +142,11 @@ const styles = StyleSheet.create({
   perPax: {
     fontSize: fontSize.xs,
     color: colors.textSecondary,
+  },
+  route: {
+    fontSize: fontSize.sm,
+    fontWeight: '600',
+    color: colors.primary,
   },
   legs: {
     borderTopWidth: 1,

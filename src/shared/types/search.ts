@@ -16,6 +16,8 @@ export type TransportType =
   | 'flight'
   | 'scooter';
 
+export type DepartureTime = 'morning' | 'afternoon' | 'evening';
+
 export interface Child {
   age: number;
 }

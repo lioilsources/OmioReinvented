@@ -6,24 +6,30 @@ import type { Destination } from '@/shared/types';
 
 interface PriceBubbleMarkerProps {
   destination: Destination;
+  price: number;
   highlighted: boolean;
   onPress: () => void;
 }
 
 export function PriceBubbleMarker({
   destination,
+  price,
   highlighted,
   onPress,
 }: PriceBubbleMarkerProps) {
   return (
     <Marker
+      key={`${destination.id}-${price}`}
       coordinate={{ latitude: destination.lat, longitude: destination.lng }}
       onPress={onPress}
       tracksViewChanges={false}
     >
       <View style={[styles.bubble, highlighted && styles.bubbleHighlighted]}>
+        <Text style={[styles.name, highlighted && styles.nameHighlighted]}>
+          {destination.name}
+        </Text>
         <Text style={[styles.price, highlighted && styles.priceHighlighted]}>
-          €{destination.priceFrom}
+          €{price}
         </Text>
       </View>
       <View style={[styles.arrow, highlighted && styles.arrowHighlighted]} />
@@ -40,6 +46,7 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: colors.priceBubble,
     alignSelf: 'center',
+    alignItems: 'center',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.15,
@@ -49,6 +56,15 @@ const styles = StyleSheet.create({
   bubbleHighlighted: {
     backgroundColor: colors.priceBubble,
     borderColor: colors.primaryDark,
+  },
+  name: {
+    fontSize: fontSize.xs,
+    fontWeight: '600',
+    color: colors.text,
+    textAlign: 'center',
+  },
+  nameHighlighted: {
+    color: colors.priceBubbleText,
   },
   price: {
     fontSize: fontSize.sm,

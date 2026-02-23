@@ -18,4 +18,6 @@ export interface Journey {
   price: number;
   legs: JourneyLeg[];
   transportType: TransportType;
+  destinationName?: string;
+  destinationId?: string;
 }
