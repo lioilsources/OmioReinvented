@@ -18,7 +18,7 @@ export function TimeModeGrid({ destination, onSelect }: TimeModeGridProps) {
           key={mode}
           label={timeModes[mode].label}
           emoji={timeModes[mode].emoji}
-          price={destination.prices_by_when[mode]}
+          price={destination.priceFrom ?? undefined}
           onPress={() => onSelect(mode)}
         />
       ))}

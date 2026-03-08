@@ -87,10 +87,9 @@ export const useSearchStore = create<SearchState>((set, get) => ({
     }),
 
   getPricePerPax: () => {
-    const { destination, timeMode } = get();
-    if (!destination) return 0;
-    if (!timeMode) return destination.priceFrom;
-    return destination.prices_by_when[timeMode] ?? destination.priceFrom;
+    const { destination } = get();
+    if (!destination || destination.priceFrom === null) return 0;
+    return destination.priceFrom;
   },
 
   getTotalPrice: () => {

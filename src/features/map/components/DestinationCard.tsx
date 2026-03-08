@@ -1,6 +1,5 @@
 import React from 'react';
-import { View, Text, Pressable, Image, StyleSheet } from 'react-native';
-import { TransportIcon } from '@/shared/components/TransportIcon';
+import { View, Text, Pressable, StyleSheet } from 'react-native';
 import { colors, borderRadius, fontSize, spacing } from '@/shared/constants/theme';
 import type { Destination } from '@/shared/types';
 
@@ -15,12 +14,14 @@ export function DestinationCard({
   highlighted,
   onPress,
 }: DestinationCardProps) {
+  const priceLabel =
+    destination.priceFrom !== null ? `from €${destination.priceFrom}` : '...';
+
   return (
     <Pressable
       style={[styles.card, highlighted && styles.cardHighlighted]}
       onPress={onPress}
     >
-      <Image source={{ uri: destination.imageUrl }} style={styles.image} />
       <View style={styles.info}>
         <View style={styles.header}>
           <Text style={styles.name} numberOfLines={1}>
@@ -28,14 +29,7 @@ export function DestinationCard({
           </Text>
           <Text style={styles.country}>{destination.country}</Text>
         </View>
-        <View style={styles.footer}>
-          <View style={styles.transports}>
-            {destination.transportTypes.map((t) => (
-              <TransportIcon key={t} type={t} size={14} />
-            ))}
-          </View>
-          <Text style={styles.price}>from €{destination.priceFrom}</Text>
-        </View>
+        <Text style={styles.price}>{priceLabel}</Text>
       </View>
     </Pressable>
   );
@@ -59,20 +53,17 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: colors.primary,
   },
-  image: {
-    width: 80,
-    height: 80,
-    backgroundColor: colors.surface,
-  },
   info: {
     flex: 1,
     padding: spacing.sm,
-    justifyContent: 'space-between',
-  },
-  header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
   },
   name: {
     fontSize: fontSize.lg,
@@ -85,18 +76,10 @@ const styles = StyleSheet.create({
     color: colors.textSecondary,
     marginLeft: spacing.xs,
   },
-  footer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  transports: {
-    flexDirection: 'row',
-    gap: spacing.xs,
-  },
   price: {
     fontSize: fontSize.md,
     fontWeight: '700',
     color: colors.primary,
+    marginLeft: spacing.sm,
   },
 });

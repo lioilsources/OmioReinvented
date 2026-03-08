@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { View, StyleSheet } from 'react-native';
 import { MapViewContainer } from '@/features/map/components/MapViewContainer';
 import { ModeSelector } from '@/features/map/components/ModeSelector';
@@ -7,10 +7,13 @@ import { OriginPill } from '@/features/map/components/OriginPill';
 import { MapBottomSheet } from '@/features/map/components/MapBottomSheet';
 import { useMapCamera } from '@/features/map/hooks/useMapCamera';
 import { useUserLocation } from '@/features/map/hooks/useUserLocation';
-import { useDestinations } from '@/features/map/hooks/useDestinations';
+import { usePositions } from '@/features/map/hooks/usePositions';
+import { useDestinationPrices } from '@/features/map/hooks/useDestinationPrices';
 import { useSearchStore } from '@/stores/useSearchStore';
 import { useUIStore } from '@/stores/useUIStore';
-import type { Destination, DistanceMode } from '@/shared/types';
+import type { Destination, DistanceMode, MapBounds } from '@/shared/types';
+
+const BOUNDS_DEBOUNCE_MS = 500;
 
 export default function MapScreen() {
   const { lat, lng, loading: locationLoading } = useUserLocation();
@@ -26,7 +29,28 @@ export default function MapScreen() {
   const setDepartureTime = useSearchStore((s) => s.setDepartureTime);
   const setActiveSheet = useUIStore((s) => s.setActiveSheet);
 
-  const { data: destinations = [], isLoading } = useDestinations(distanceMode);
+  const [bounds, setBounds] = useState<MapBounds | null>(null);
+  const boundsTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const handleBoundsChange = useCallback((newBounds: MapBounds) => {
+    if (boundsTimerRef.current) clearTimeout(boundsTimerRef.current);
+    boundsTimerRef.current = setTimeout(() => {
+      setBounds(newBounds);
+    }, BOUNDS_DEBOUNCE_MS);
+  }, []);
+
+  const { data: rawDestinations = [], isLoading } = usePositions(bounds);
+  const { data: priceMap } = useDestinationPrices(rawDestinations, distanceMode);
+
+  // Merge positions with prices
+  const destinations = useMemo<Destination[]>(() => {
+    if (!priceMap) return rawDestinations;
+    return rawDestinations.map((d) => ({
+      ...d,
+      priceFrom: priceMap.get(d.id) ?? d.priceFrom,
+    }));
+  }, [rawDestinations, priceMap]);
+
   const [highlightedId, setHighlightedId] = useState<string | null>(null);
 
   // Update origin when location resolves
@@ -70,8 +94,8 @@ export default function MapScreen() {
         mode={distanceMode}
         destinations={destinations}
         highlightedId={highlightedId}
-        departureTime={departureTime}
         onMarkerPress={handleMarkerPress}
+        onBoundsChange={handleBoundsChange}
       />
       <ModeSelector
         activeMode={distanceMode}

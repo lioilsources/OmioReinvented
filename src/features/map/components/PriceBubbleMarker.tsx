@@ -6,20 +6,20 @@ import type { Destination } from '@/shared/types';
 
 interface PriceBubbleMarkerProps {
   destination: Destination;
-  price: number;
   highlighted: boolean;
   onPress: () => void;
 }
 
 export function PriceBubbleMarker({
   destination,
-  price,
   highlighted,
   onPress,
 }: PriceBubbleMarkerProps) {
+  const priceLabel =
+    destination.priceFrom !== null ? `€${destination.priceFrom}` : '...';
+
   return (
     <Marker
-      key={`${destination.id}-${price}`}
       coordinate={{ latitude: destination.lat, longitude: destination.lng }}
       onPress={onPress}
       tracksViewChanges={false}
@@ -29,7 +29,7 @@ export function PriceBubbleMarker({
           {destination.name}
         </Text>
         <Text style={[styles.price, highlighted && styles.priceHighlighted]}>
-          €{price}
+          {priceLabel}
         </Text>
       </View>
       <View style={[styles.arrow, highlighted && styles.arrowHighlighted]} />

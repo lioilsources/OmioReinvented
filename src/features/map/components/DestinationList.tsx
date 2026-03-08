@@ -19,7 +19,7 @@ export function DestinationList({
   loading,
 }: DestinationListProps) {
   const listRef = useRef<any>(null);
-  const sorted = [...destinations].sort((a, b) => b.popularity - a.popularity);
+  const sorted = [...destinations].sort((a, b) => a.name.localeCompare(b.name));
 
   useEffect(() => {
     if (highlightedId && listRef.current) {

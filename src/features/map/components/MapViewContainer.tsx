@@ -1,11 +1,11 @@
-import React from 'react';
+import React, { useCallback } from 'react';
 import { StyleSheet } from 'react-native';
-import MapView from 'react-native-maps';
+import MapView, { type Region } from 'react-native-maps';
 import { DestinationMarkers } from './DestinationMarkers';
 import { regionFromCoords } from '../utils/geo';
 import { getLatitudeDeltaForMode } from '../utils/modeConfig';
 import { useUIStore } from '@/stores/useUIStore';
-import type { DepartureTime, Destination, DistanceMode } from '@/shared/types';
+import type { Destination, DistanceMode, MapBounds } from '@/shared/types';
 
 interface MapViewContainerProps {
   mapRef: React.RefObject<MapView | null>;
@@ -14,8 +14,17 @@ interface MapViewContainerProps {
   mode: DistanceMode;
   destinations: Destination[];
   highlightedId: string | null;
-  departureTime: DepartureTime;
   onMarkerPress: (destination: Destination) => void;
+  onBoundsChange: (bounds: MapBounds) => void;
+}
+
+function regionToBounds(region: Region): MapBounds {
+  return {
+    northLat: region.latitude + region.latitudeDelta / 2,
+    southLat: region.latitude - region.latitudeDelta / 2,
+    westLon: region.longitude - region.longitudeDelta / 2,
+    eastLon: region.longitude + region.longitudeDelta / 2,
+  };
 }
 
 export function MapViewContainer({
@@ -25,12 +34,20 @@ export function MapViewContainer({
   mode,
   destinations,
   highlightedId,
-  departureTime,
   onMarkerPress,
+  onBoundsChange,
 }: MapViewContainerProps) {
   const setMapInteracting = useUIStore((s) => s.setMapInteracting);
   const delta = getLatitudeDeltaForMode(mode);
   const initialRegion = regionFromCoords(userLat, userLng, delta);
+
+  const handleRegionChangeComplete = useCallback(
+    (region: Region) => {
+      setMapInteracting(false);
+      onBoundsChange(regionToBounds(region));
+    },
+    [setMapInteracting, onBoundsChange],
+  );
 
   return (
     <MapView
@@ -40,12 +57,11 @@ export function MapViewContainer({
       showsUserLocation
       showsMyLocationButton={false}
       onPanDrag={() => setMapInteracting(true)}
-      onRegionChangeComplete={() => setMapInteracting(false)}
+      onRegionChangeComplete={handleRegionChangeComplete}
     >
       <DestinationMarkers
         destinations={destinations}
         highlightedId={highlightedId}
-        departureTime={departureTime}
         onMarkerPress={onMarkerPress}
       />
     </MapView>

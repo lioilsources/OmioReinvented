@@ -5,7 +5,7 @@ import { colors, borderRadius, fontSize, spacing } from '@/shared/constants/them
 interface TimeModeChipProps {
   label: string;
   emoji: string;
-  price: number;
+  price?: number;
   onPress: () => void;
 }
 
@@ -14,7 +14,9 @@ export function TimeModeChip({ label, emoji, price, onPress }: TimeModeChipProps
     <Pressable style={styles.chip} onPress={onPress}>
       <Text style={styles.emoji}>{emoji}</Text>
       <Text style={styles.label}>{label}</Text>
-      <Text style={styles.price}>€{price}/pax</Text>
+      <Text style={styles.price}>
+        {price !== undefined ? `€${price}/pax` : '...'}
+      </Text>
     </Pressable>
   );
 }
