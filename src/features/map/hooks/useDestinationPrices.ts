@@ -13,18 +13,19 @@ function getTomorrowDate(): string {
 export function useDestinationPrices(
   destinations: Destination[],
   distanceMode: DistanceMode,
+  fromId: string,
 ) {
   const ids = destinations.map((d) => d.id).sort().join(',');
 
   return useQuery({
-    queryKey: ['prices', ids, distanceMode],
+    queryKey: ['prices', fromId, ids, distanceMode],
     queryFn: async (): Promise<Map<string, number>> => {
       const travelModes = TRAVEL_MODES[distanceMode];
       const date = getTomorrowDate();
 
       const results = await Promise.allSettled(
         destinations.map(async (dest) => {
-          const price = await getDiscoveryPrice(dest.id, date, travelModes);
+          const price = await getDiscoveryPrice(fromId, dest.id, date, travelModes);
           return { id: dest.id, price };
         }),
       );

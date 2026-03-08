@@ -9,9 +9,6 @@ export const API_BASE_URL = USE_PROD ? PROD_BASE_URL : QA_BASE_URL;
 
 export const BEARER_TOKEN = process.env.EXPO_PUBLIC_OMIO_BEARER ?? '';
 
-// export const FROM_POSITION_ID = '375859'; // Praha location
-export const FROM_POSITION_ID = '380553'; // Londyn location
-
 export const DEFAULT_LOCALE = 'cs';
 export const DEFAULT_CURRENCY = 'EUR';
 

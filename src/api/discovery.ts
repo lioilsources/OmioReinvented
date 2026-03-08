@@ -1,5 +1,5 @@
 import { apiGet } from './client';
-import { DEFAULT_CURRENCY, DEFAULT_LOCALE, FROM_POSITION_ID } from './config';
+import { DEFAULT_CURRENCY, DEFAULT_LOCALE } from './config';
 
 interface DiscoverySchedule {
   priceCents?: number;
@@ -16,12 +16,13 @@ interface DiscoveryResponse {
 }
 
 export async function getDiscoveryPrice(
+  fromId: string,
   toId: string,
   outboundDateStart: string,
   travelModes: string,
 ): Promise<number | null> {
   const params = {
-    fromId: FROM_POSITION_ID,
+    fromId,
     toId,
     outboundDateStart,
     travelModes,
@@ -30,7 +31,7 @@ export async function getDiscoveryPrice(
     adults: '1',
   };
 
-  if (__DEV__) console.log(`[Discovery] ${FROM_POSITION_ID} → ${toId}, date=${outboundDateStart}, modes=${travelModes}`);
+  if (__DEV__) console.log(`[Discovery] ${fromId} → ${toId}, date=${outboundDateStart}, modes=${travelModes}`);
 
   const resp = await apiGet<DiscoveryResponse>('/discovery/results/batch', params);
 

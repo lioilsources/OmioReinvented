@@ -9,7 +9,8 @@ import { useMapCamera } from '@/features/map/hooks/useMapCamera';
 import { useUserLocation } from '@/features/map/hooks/useUserLocation';
 import { usePositions } from '@/features/map/hooks/usePositions';
 import { useDestinationPrices } from '@/features/map/hooks/useDestinationPrices';
-import { useSearchStore } from '@/stores/useSearchStore';
+import { useSearchStore, ORIGINS } from '@/stores/useSearchStore';
+import type { Origin } from '@/stores/useSearchStore';
 import { useUIStore } from '@/stores/useUIStore';
 import type { Destination, DistanceMode, MapBounds } from '@/shared/types';
 
@@ -40,7 +41,7 @@ export default function MapScreen() {
   }, []);
 
   const { data: rawDestinations = [], isLoading } = usePositions(bounds, distanceMode);
-  const { data: priceMap } = useDestinationPrices(rawDestinations, distanceMode);
+  const { data: priceMap } = useDestinationPrices(rawDestinations, distanceMode, origin.id);
 
   // Merge positions with prices
   const destinations = useMemo<Destination[]>(() => {
@@ -53,12 +54,14 @@ export default function MapScreen() {
 
   const [highlightedId, setHighlightedId] = useState<string | null>(null);
 
-  // Update origin when location resolves
+  // Set origin coords from user location on first load only
+  const initializedRef = useRef(false);
   useEffect(() => {
-    if (!locationLoading) {
-      setOrigin({ lat, lng, name: 'Prague' });
+    if (!locationLoading && !initializedRef.current) {
+      initializedRef.current = true;
+      // Keep the default origin (Prague) — location is just used for initial map center
     }
-  }, [locationLoading, lat, lng, setOrigin]);
+  }, [locationLoading]);
 
   const handleModeChange = useCallback(
     (mode: DistanceMode) => {
@@ -85,6 +88,17 @@ export default function MapScreen() {
     [setDestination, setActiveSheet]
   );
 
+  const handleOriginSelect = useCallback(
+    (newOrigin: Origin) => {
+      setOrigin(newOrigin);
+      setDestination(null);
+      setHighlightedId(null);
+      setActiveSheet('destinations');
+      animateToMode(newOrigin.lat, newOrigin.lng, distanceMode);
+    },
+    [setOrigin, setDestination, setActiveSheet, animateToMode, distanceMode]
+  );
+
   return (
     <View style={styles.container}>
       <MapViewContainer
@@ -105,7 +119,7 @@ export default function MapScreen() {
         value={departureTime}
         onChange={setDepartureTime}
       />
-      <OriginPill name={origin.name} />
+      <OriginPill name={origin.name} origins={ORIGINS} onSelect={handleOriginSelect} />
       <MapBottomSheet
         destinations={destinations}
         highlightedId={highlightedId}

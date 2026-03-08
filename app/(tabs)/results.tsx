@@ -11,6 +11,7 @@ import { colors, fontSize, spacing } from '@/shared/constants/theme';
 
 export default function ResultsScreen() {
   const router = useRouter();
+  const origin = useSearchStore((s) => s.origin);
   const destination = useSearchStore((s) => s.destination);
   const timeMode = useSearchStore((s) => s.timeMode);
   const setActiveSheet = useUIStore((s) => s.setActiveSheet);
@@ -39,7 +40,7 @@ export default function ResultsScreen() {
         ) : (
           <View>
             <Text style={styles.title}>
-              Prague → {destination.name}
+              {origin.name} → {destination.name}
             </Text>
             {timeMode && (
               <Text style={styles.subtitle}>
