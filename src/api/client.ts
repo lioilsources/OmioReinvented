@@ -23,5 +23,8 @@ export async function apiGet<T>(path: string, params?: Record<string, string>): 
   if (!response.ok) {
     throw new Error(`API error: ${response.status} ${response.statusText}`);
   }
-  return response.json();
+
+  const data = await response.json();
+  if (__DEV__) console.log(`[API] ${path} response:\n${JSON.stringify(data, null, 2)}`);
+  return data as T;
 }

@@ -23,9 +23,10 @@ export async function getPositions(bounds: MapBounds): Promise<Position[]> {
     format: 'json',
   });
 
+  if (__DEV__) console.log(`[Positions] ${all.length} total, types: ${[...new Set(all.map(p => p.type))].join(', ')}`);
+
   const filtered = all.filter(
     (p) =>
-      p.type === 'station' &&
       p.latitude >= bounds.southLat &&
       p.latitude <= bounds.northLat &&
       p.longitude >= bounds.westLon &&

@@ -1,6 +1,6 @@
 import type { DistanceMode } from '@/shared/types';
 
-const QA_BASE_URL = 'https://api.qa.goeuro.ninja/v2';
+const QA_BASE_URL = 'https://api.omio.com.qa.goeuro.ninja/v2';
 const PROD_BASE_URL = 'https://api.goeuro.ninja/v2';
 
 const USE_PROD = false;

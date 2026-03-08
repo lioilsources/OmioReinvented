@@ -20,9 +20,9 @@ export async function getDiscoveryPrice(
   outboundDateStart: string,
   travelModes: string,
 ): Promise<number | null> {
-  const resp = await apiGet<DiscoveryResponse>('/discovery-results/batch', {
-    fromID: FROM_POSITION_ID,
-    toID: toId,
+  const resp = await apiGet<DiscoveryResponse>('/discovery/results/batch', {
+    fromId: FROM_POSITION_ID,
+    toId,
     outboundDateStart,
     travelModes,
     locale: DEFAULT_LOCALE,
