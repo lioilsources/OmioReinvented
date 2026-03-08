@@ -9,7 +9,8 @@ export const API_BASE_URL = USE_PROD ? PROD_BASE_URL : QA_BASE_URL;
 
 export const BEARER_TOKEN = process.env.EXPO_PUBLIC_OMIO_BEARER ?? '';
 
-export const FROM_POSITION_ID = '16842359'; // Praha hlavní nádraží
+// export const FROM_POSITION_ID = '375859'; // Praha location
+export const FROM_POSITION_ID = '380553'; // Londyn location
 
 export const DEFAULT_LOCALE = 'cs';
 export const DEFAULT_CURRENCY = 'EUR';
@@ -22,3 +23,5 @@ export const TRAVEL_MODES: Record<DistanceMode, string> = {
 };
 
 export const MAX_POSITIONS = 15;
+
+export const DB_API_BASE_URL = 'http://k8s-qa-1.goeuro.ninja/db-api';

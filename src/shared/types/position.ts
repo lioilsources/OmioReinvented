@@ -6,6 +6,7 @@ export interface Position {
   latitude: number;
   longitude: number;
   countryCode: string;
+  population?: number;
 }
 
 export interface MapBounds {

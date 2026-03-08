@@ -5,4 +5,5 @@ export interface Destination {
   lng: number;
   country: string;
   priceFrom: number | null;
+  population?: number;
 }

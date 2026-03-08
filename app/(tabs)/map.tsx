@@ -39,7 +39,7 @@ export default function MapScreen() {
     }, BOUNDS_DEBOUNCE_MS);
   }, []);
 
-  const { data: rawDestinations = [], isLoading } = usePositions(bounds);
+  const { data: rawDestinations = [], isLoading } = usePositions(bounds, distanceMode);
   const { data: priceMap } = useDestinationPrices(rawDestinations, distanceMode);
 
   // Merge positions with prices
@@ -47,7 +47,7 @@ export default function MapScreen() {
     if (!priceMap) return rawDestinations;
     return rawDestinations.map((d) => ({
       ...d,
-      priceFrom: priceMap.get(d.id) ?? d.priceFrom,
+      priceFrom: priceMap?.get(d.id) ?? d.priceFrom,
     }));
   }, [rawDestinations, priceMap]);
 
