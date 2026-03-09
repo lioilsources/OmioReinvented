@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, Text, Pressable, StyleSheet } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { colors, borderRadius, fontSize, spacing } from '@/shared/constants/theme';
 import type { DepartureTime } from '@/shared/types';
 
@@ -8,10 +9,10 @@ interface DaytimeSliderProps {
   onChange: (value: DepartureTime) => void;
 }
 
-const options: { key: DepartureTime; icon: string; label: string }[] = [
-  { key: 'morning', icon: '🌅', label: 'Ráno' },
-  { key: 'afternoon', icon: '☀️', label: 'Odpoledne' },
-  { key: 'evening', icon: '🌇', label: 'Večer' },
+const options: { key: DepartureTime; icon: keyof typeof Ionicons.glyphMap; label: string }[] = [
+  { key: 'morning', icon: 'sunny', label: 'Ráno' },
+  { key: 'afternoon', icon: 'partly-sunny', label: 'Odpoledne' },
+  { key: 'evening', icon: 'moon', label: 'Večer' },
 ];
 
 export function DaytimeSlider({ value, onChange }: DaytimeSliderProps) {
@@ -25,7 +26,7 @@ export function DaytimeSlider({ value, onChange }: DaytimeSliderProps) {
             style={[styles.option, active && styles.optionActive]}
             onPress={() => onChange(opt.key)}
           >
-            <Text style={styles.icon}>{opt.icon}</Text>
+            <Ionicons name={opt.icon} size={20} color={active ? colors.chipTextActive : colors.text} />
             <Text style={[styles.label, active && styles.labelActive]}>
               {opt.label}
             </Text>
@@ -61,9 +62,6 @@ const styles = StyleSheet.create({
   },
   optionActive: {
     backgroundColor: colors.chipActive,
-  },
-  icon: {
-    fontSize: 20,
   },
   label: {
     fontSize: fontSize.xs,
