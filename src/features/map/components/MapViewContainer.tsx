@@ -1,10 +1,12 @@
 import React, { useCallback } from 'react';
-import { StyleSheet } from 'react-native';
-import MapView, { type Region } from 'react-native-maps';
+import { StyleSheet, Platform } from 'react-native';
+import MapView, { Polyline, type Region } from 'react-native-maps';
 import { DestinationMarkers } from './DestinationMarkers';
 import { regionFromCoords } from '../utils/geo';
 import { getLatitudeDeltaForMode } from '../utils/modeConfig';
+import { mutedMapStyle } from '../utils/mapStyle';
 import { useUIStore } from '@/stores/useUIStore';
+import { colors } from '@/shared/constants/theme';
 import type { Destination, DistanceMode, MapBounds } from '@/shared/types';
 
 interface MapViewContainerProps {
@@ -49,6 +51,10 @@ export function MapViewContainer({
     [setMapInteracting, onBoundsChange],
   );
 
+  const highlightedDest = highlightedId
+    ? destinations.find((d) => d.id === highlightedId)
+    : null;
+
   return (
     <MapView
       ref={mapRef}
@@ -56,9 +62,21 @@ export function MapViewContainer({
       initialRegion={initialRegion}
       showsUserLocation
       showsMyLocationButton={false}
+      customMapStyle={Platform.OS === 'android' ? mutedMapStyle : undefined}
+      userInterfaceStyle="light"
       onPanDrag={() => setMapInteracting(true)}
       onRegionChangeComplete={handleRegionChangeComplete}
     >
+      {highlightedDest && (
+        <Polyline
+          coordinates={[
+            { latitude: userLat, longitude: userLng },
+            { latitude: highlightedDest.lat, longitude: highlightedDest.lng },
+          ]}
+          strokeColor={colors.routeLine}
+          strokeWidth={2.5}
+        />
+      )}
       <DestinationMarkers
         destinations={destinations}
         highlightedId={highlightedId}
