@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { Marker } from 'react-native-maps';
 import { colors, borderRadius, fontSize, spacing } from '@/shared/constants/theme';
@@ -18,11 +18,24 @@ export function PriceBubbleMarker({
   const priceLabel =
     destination.priceFrom !== null ? `€${destination.priceFrom}` : '...';
 
+  const prevPriceRef = useRef(destination.priceFrom);
+  const [needsTracking, setNeedsTracking] = useState(destination.priceFrom === null);
+
+  useEffect(() => {
+    if (prevPriceRef.current !== destination.priceFrom) {
+      prevPriceRef.current = destination.priceFrom;
+      setNeedsTracking(true);
+      // Stop tracking after the marker re-renders
+      const timer = setTimeout(() => setNeedsTracking(false), 500);
+      return () => clearTimeout(timer);
+    }
+  }, [destination.priceFrom]);
+
   return (
     <Marker
       coordinate={{ latitude: destination.lat, longitude: destination.lng }}
       onPress={onPress}
-      tracksViewChanges={destination.priceFrom === null}
+      tracksViewChanges={needsTracking}
     >
       <View style={[styles.bubble, highlighted && styles.bubbleHighlighted]}>
         <Text style={[styles.name, highlighted && styles.nameHighlighted]}>

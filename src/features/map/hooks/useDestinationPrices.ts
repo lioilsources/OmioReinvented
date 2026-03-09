@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
-import { getDiscoveryPrice } from '@/api/discovery';
+import { getDiscoveryPricesByDaytime } from '@/api/discovery';
+import type { DaytimePrices } from '@/api/discovery';
 import { TRAVEL_MODES } from '@/api/config';
 import type { Destination, DistanceMode } from '@/shared/types';
 
@@ -19,30 +20,30 @@ export function useDestinationPrices(
 
   return useQuery({
     queryKey: ['prices', fromId, ids, distanceMode],
-    queryFn: async (): Promise<Map<string, number>> => {
+    queryFn: async (): Promise<Map<string, DaytimePrices>> => {
       const travelModes = TRAVEL_MODES[distanceMode];
       const date = getTomorrowDate();
 
       const results = await Promise.allSettled(
         destinations.map(async (dest) => {
-          const price = await getDiscoveryPrice(fromId, dest.id, date, travelModes);
-          return { id: dest.id, price };
+          const prices = await getDiscoveryPricesByDaytime(fromId, dest.id, date, travelModes);
+          return { id: dest.id, prices };
         }),
       );
 
-      const priceMap = new Map<string, number>();
+      const priceMap = new Map<string, DaytimePrices>();
       let fulfilled = 0;
       let rejected = 0;
       for (const result of results) {
-        if (result.status === 'fulfilled' && result.value.price !== null) {
-          priceMap.set(result.value.id, result.value.price);
+        if (result.status === 'fulfilled') {
+          priceMap.set(result.value.id, result.value.prices);
           fulfilled++;
-        } else if (result.status === 'rejected') {
+        } else {
           rejected++;
           if (__DEV__) console.log(`[Prices] rejected: ${result.reason}`);
         }
       }
-      if (__DEV__) console.log(`[Prices] ${destinations.length} destinations, ${fulfilled} with price, ${rejected} rejected, ${priceMap.size} in map`);
+      if (__DEV__) console.log(`[Prices] ${destinations.length} destinations, ${fulfilled} with prices, ${rejected} rejected`);
       return priceMap;
     },
     enabled: destinations.length > 0,

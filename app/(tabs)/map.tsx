@@ -43,14 +43,18 @@ export default function MapScreen() {
   const { data: rawDestinations = [], isLoading } = usePositions(bounds, distanceMode);
   const { data: priceMap } = useDestinationPrices(rawDestinations, distanceMode, origin.id);
 
-  // Merge positions with prices
+  // Merge positions with prices for the active daytime bucket
   const destinations = useMemo<Destination[]>(() => {
     if (!priceMap) return rawDestinations;
-    return rawDestinations.map((d) => ({
-      ...d,
-      priceFrom: priceMap?.get(d.id) ?? d.priceFrom,
-    }));
-  }, [rawDestinations, priceMap]);
+    return rawDestinations.map((d) => {
+      const daytimePrices = priceMap.get(d.id);
+      const price = daytimePrices ? daytimePrices[departureTime] : null;
+      return {
+        ...d,
+        priceFrom: price ?? d.priceFrom,
+      };
+    });
+  }, [rawDestinations, priceMap, departureTime]);
 
   const [highlightedId, setHighlightedId] = useState<string | null>(null);
 
