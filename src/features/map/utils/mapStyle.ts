@@ -6,7 +6,7 @@ export const mutedMapStyle = [
   },
   {
     elementType: 'labels.text.fill',
-    stylers: [{ color: '#6b7b8d' }],
+    stylers: [{ color: '#556270' }],
   },
   {
     elementType: 'labels.text.stroke',
@@ -15,12 +15,12 @@ export const mutedMapStyle = [
   {
     featureType: 'water',
     elementType: 'geometry',
-    stylers: [{ color: '#d4e4ed' }],
+    stylers: [{ color: '#c2d8e8' }],
   },
   {
     featureType: 'road',
     elementType: 'geometry',
-    stylers: [{ color: '#e0e0e0' }],
+    stylers: [{ color: '#d6d6d6' }],
   },
   {
     featureType: 'road',
@@ -38,21 +38,21 @@ export const mutedMapStyle = [
   {
     featureType: 'administrative.country',
     elementType: 'geometry.stroke',
-    stylers: [{ color: '#c0cdd6' }, { weight: 1 }],
+    stylers: [{ color: '#a8b8c4' }, { weight: 1.5 }],
   },
   {
     featureType: 'administrative.country',
     elementType: 'labels.text.fill',
-    stylers: [{ color: '#8e9baa' }],
+    stylers: [{ color: '#7a8a9a' }],
   },
   {
     featureType: 'administrative.locality',
     elementType: 'labels.text.fill',
-    stylers: [{ color: '#5c6b7a' }],
+    stylers: [{ color: '#3d4f5f' }],
   },
   {
     featureType: 'landscape.natural',
     elementType: 'geometry',
-    stylers: [{ color: '#f5f5f5' }],
+    stylers: [{ color: '#eaeaea' }],
   },
 ];

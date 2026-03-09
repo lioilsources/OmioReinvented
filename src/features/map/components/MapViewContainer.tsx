@@ -1,6 +1,6 @@
 import React, { useCallback } from 'react';
-import { StyleSheet, Platform } from 'react-native';
-import MapView, { Polyline, type Region } from 'react-native-maps';
+import { StyleSheet } from 'react-native';
+import MapView, { Polyline, PROVIDER_GOOGLE, type Region } from 'react-native-maps';
 import { DestinationMarkers } from './DestinationMarkers';
 import { regionFromCoords } from '../utils/geo';
 import { getLatitudeDeltaForMode } from '../utils/modeConfig';
@@ -62,8 +62,8 @@ export function MapViewContainer({
       initialRegion={initialRegion}
       showsUserLocation
       showsMyLocationButton={false}
-      customMapStyle={Platform.OS === 'android' ? mutedMapStyle : undefined}
-      userInterfaceStyle="light"
+      provider={PROVIDER_GOOGLE}
+      customMapStyle={mutedMapStyle}
       onPanDrag={() => setMapInteracting(true)}
       onRegionChangeComplete={handleRegionChangeComplete}
     >

@@ -22,7 +22,7 @@ export function PriceBubbleMarker({
     <Marker
       coordinate={{ latitude: destination.lat, longitude: destination.lng }}
       onPress={onPress}
-      tracksViewChanges={false}
+      tracksViewChanges={destination.priceFrom === null}
     >
       <View style={[styles.bubble, highlighted && styles.bubbleHighlighted]}>
         <Text style={[styles.name, highlighted && styles.nameHighlighted]}>
