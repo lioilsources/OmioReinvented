@@ -26,6 +26,7 @@ interface SearchState {
   timeMode: TimeMode | null;
   departureTime: DepartureTime;
   pax: PaxConfig;
+  selectedPoiType: string | null;
 
   // Actions
   setOrigin: (origin: Origin) => void;
@@ -33,6 +34,7 @@ interface SearchState {
   setDestination: (destination: Destination | null) => void;
   setTimeMode: (mode: TimeMode | null) => void;
   setDepartureTime: (time: DepartureTime) => void;
+  setSelectedPoiType: (type: string | null) => void;
   setAdults: (count: number) => void;
   addChild: () => void;
   removeChild: (index: number) => void;
@@ -51,9 +53,11 @@ export const useSearchStore = create<SearchState>((set, get) => ({
   timeMode: null,
   departureTime: 'morning',
   pax: { adults: 1, children: [] },
+  selectedPoiType: null,
 
   setOrigin: (origin) => set({ origin }),
-  setDistanceMode: (distanceMode) => set({ distanceMode, destination: null, timeMode: null }),
+  setDistanceMode: (distanceMode) => set({ distanceMode, destination: null, timeMode: null, selectedPoiType: null }),
+  setSelectedPoiType: (selectedPoiType) => set({ selectedPoiType }),
   setDestination: (destination) => set({ destination }),
   setTimeMode: (timeMode) => set({ timeMode }),
   setDepartureTime: (departureTime) => set({ departureTime }),
@@ -94,6 +98,7 @@ export const useSearchStore = create<SearchState>((set, get) => ({
       timeMode: null,
       departureTime: 'morning',
       pax: { adults: 1, children: [] },
+      selectedPoiType: null,
     }),
 
   getPricePerPax: () => {

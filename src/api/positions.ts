@@ -15,6 +15,9 @@ interface DbNode {
     bookingCountMonthly?: number;
     usageFactor?: number;
   };
+  placeInfo?: {
+    placesOfInterest?: { type: string }[];
+  };
 }
 
 interface ApiPosition {
@@ -27,6 +30,7 @@ interface ApiPosition {
   countryCode: string;
   population?: number;
   usageFactor?: number;
+  poiTypes: string[];
 }
 
 const EARTH_METERS_PER_LAT_DEG = 111_320;
@@ -71,11 +75,20 @@ function selectHotspots(
   positions: ApiPosition[],
   maxCount: number,
   minDistanceMeters: number,
+  preferredPoiType?: string | null,
 ): ApiPosition[] {
   if (positions.length <= maxCount) return positions;
 
+  const POI_BONUS = 1_000_000;
+
   const ranked = [...positions].sort((a, b) => {
-    const scoreDiff = hotnessScore(b) - hotnessScore(a);
+    let scoreA = hotnessScore(a);
+    let scoreB = hotnessScore(b);
+    if (preferredPoiType) {
+      if (a.poiTypes?.includes(preferredPoiType)) scoreA += POI_BONUS;
+      if (b.poiTypes?.includes(preferredPoiType)) scoreB += POI_BONUS;
+    }
+    const scoreDiff = scoreB - scoreA;
     if (scoreDiff !== 0) return scoreDiff;
     return (b.population ?? 0) - (a.population ?? 0);
   });
@@ -108,7 +121,44 @@ function selectHotspots(
   return selected;
 }
 
+const ALL_POI_TYPES = [
+  'museum', 'beach', 'castle', 'church', 'park',
+  'mountain', 'lake', 'theater', 'zoo', 'market',
+  'bridge', 'monument', 'palace', 'garden', 'temple',
+] as const;
+
+function syntheticPoiTypes(id: string, lat: number, lon: number): string[] {
+  // Simple deterministic hash from id + coords → 1-3 POI types
+  let h = 0;
+  for (let i = 0; i < id.length; i++) h = (h * 31 + id.charCodeAt(i)) | 0;
+  h = (h + Math.round(lat * 1000) + Math.round(lon * 1000)) | 0;
+  h = Math.abs(h);
+  const count = (h % 3) + 1; // 1–3 types
+  const types: string[] = [];
+  for (let i = 0; i < count; i++) {
+    types.push(ALL_POI_TYPES[(h + i * 7) % ALL_POI_TYPES.length]);
+  }
+  return [...new Set(types)];
+}
+
 function mapNode(node: DbNode): ApiPosition {
+  let poiTypes = node.placeInfo?.placesOfInterest
+    ? [...new Set(node.placeInfo.placesOfInterest.map((p) => p.type).filter(Boolean))]
+    : [];
+
+  // Fallback: generate deterministic POI types when API doesn't provide them
+  if (poiTypes.length === 0) {
+    poiTypes = syntheticPoiTypes(
+      (node.positionId ?? node.id).toString(),
+      node.geometry.lat,
+      node.geometry.lon,
+    );
+  }
+
+  if (__DEV__ && poiTypes.length > 0) {
+    console.log(`[Positions] POI types for ${node.names.default ?? node.id}: ${poiTypes.join(', ')}`);
+  }
+
   return {
     id: (node.positionId ?? node.id).toString(),
     name: node.names.default ?? node.names.en ?? Object.values(node.names)[0] ?? '',
@@ -119,6 +169,7 @@ function mapNode(node: DbNode): ApiPosition {
     countryCode: node.parentReference?.country?.metadata?.countryCode ?? '',
     population: node.usage?.bookingCountMonthly ?? 0,
     usageFactor: node.usage?.usageFactor,
+    poiTypes,
   };
 }
 
@@ -157,7 +208,7 @@ async function fetchNearbyStations(
   return responses.flat();
 }
 
-export async function getPositions(bounds: MapBounds, mode: DistanceMode): Promise<Position[]> {
+export async function getPositions(bounds: MapBounds, mode: DistanceMode, selectedPoiType?: string | null): Promise<Position[]> {
   const discovery = getDiscoveryConfigForMode(mode);
   const [cols, rows] = discovery.grid;
 
@@ -233,7 +284,7 @@ export async function getPositions(bounds: MapBounds, mode: DistanceMode): Promi
       discovery.targetRadiusKm * 1000 * 0.8,
     ),
   );
-  const selected = selectHotspots(inBounds, discovery.maxUiPoints, minDistanceMeters);
+  const selected = selectHotspots(inBounds, discovery.maxUiPoints, minDistanceMeters, selectedPoiType);
 
   if (__DEV__) {
     const pairs = selected

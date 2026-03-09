@@ -18,12 +18,12 @@ function boundsKey(b: MapBounds, mode: DistanceMode) {
   ].join(',');
 }
 
-export function usePositions(bounds: MapBounds | null, mode: DistanceMode) {
+export function usePositions(bounds: MapBounds | null, mode: DistanceMode, selectedPoiType?: string | null) {
   return useQuery({
-    queryKey: ['positions', bounds ? boundsKey(bounds, mode) : 'none', mode],
+    queryKey: ['positions', bounds ? boundsKey(bounds, mode) : 'none', mode, selectedPoiType ?? null],
     queryFn: async (): Promise<Destination[]> => {
       if (!bounds) return [];
-      const positions = await getPositions(bounds, mode);
+      const positions = await getPositions(bounds, mode, selectedPoiType);
       return positions.map((p) => ({
         id: p.id,
         name: p.translatedName || p.name,
@@ -32,6 +32,7 @@ export function usePositions(bounds: MapBounds | null, mode: DistanceMode) {
         country: p.countryCode,
         priceFrom: null,
         population: p.population,
+        poiTypes: p.poiTypes,
       }));
     },
     enabled: !!bounds,

@@ -6,4 +6,5 @@ export interface Destination {
   country: string;
   priceFrom: number | null;
   population?: number;
+  poiTypes?: string[];
 }

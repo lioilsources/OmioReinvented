@@ -7,12 +7,14 @@ import type { Destination } from '@/shared/types';
 interface PriceBubbleMarkerProps {
   destination: Destination;
   highlighted: boolean;
+  dimmed?: boolean;
   onPress: () => void;
 }
 
 export function PriceBubbleMarker({
   destination,
   highlighted,
+  dimmed,
   onPress,
 }: PriceBubbleMarkerProps) {
   const priceLabel =
@@ -37,7 +39,7 @@ export function PriceBubbleMarker({
       onPress={onPress}
       tracksViewChanges={needsTracking}
     >
-      <View style={[styles.bubble, highlighted && styles.bubbleHighlighted]}>
+      <View style={[styles.bubble, highlighted && styles.bubbleHighlighted, dimmed && styles.bubbleDimmed]}>
         <Text style={[styles.name, highlighted && styles.nameHighlighted]}>
           {destination.name}
         </Text>
@@ -45,7 +47,7 @@ export function PriceBubbleMarker({
           {priceLabel}
         </Text>
       </View>
-      <View style={[styles.arrow, highlighted && styles.arrowHighlighted]} />
+      <View style={[styles.arrow, highlighted && styles.arrowHighlighted, dimmed && styles.bubbleDimmed]} />
     </Marker>
   );
 }
@@ -100,5 +102,8 @@ const styles = StyleSheet.create({
   },
   arrowHighlighted: {
     borderTopColor: colors.primaryDark,
+  },
+  bubbleDimmed: {
+    opacity: 0.4,
   },
 });

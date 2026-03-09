@@ -16,6 +16,7 @@ interface MapViewContainerProps {
   mode: DistanceMode;
   destinations: Destination[];
   highlightedId: string | null;
+  selectedPoiType: string | null;
   onMarkerPress: (destination: Destination) => void;
   onBoundsChange: (bounds: MapBounds) => void;
 }
@@ -36,6 +37,7 @@ export function MapViewContainer({
   mode,
   destinations,
   highlightedId,
+  selectedPoiType,
   onMarkerPress,
   onBoundsChange,
 }: MapViewContainerProps) {
@@ -80,6 +82,7 @@ export function MapViewContainer({
       <DestinationMarkers
         destinations={destinations}
         highlightedId={highlightedId}
+        selectedPoiType={selectedPoiType}
         onMarkerPress={onMarkerPress}
       />
     </MapView>

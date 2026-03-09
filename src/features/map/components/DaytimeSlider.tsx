@@ -1,7 +1,7 @@
 import React from 'react';
-import { View, Text, Pressable, StyleSheet } from 'react-native';
+import { View, Pressable, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { colors, borderRadius, fontSize, spacing } from '@/shared/constants/theme';
+import { colors, borderRadius, spacing } from '@/shared/constants/theme';
 import type { DepartureTime } from '@/shared/types';
 
 interface DaytimeSliderProps {
@@ -9,10 +9,10 @@ interface DaytimeSliderProps {
   onChange: (value: DepartureTime) => void;
 }
 
-const options: { key: DepartureTime; icon: keyof typeof Ionicons.glyphMap; label: string }[] = [
-  { key: 'morning', icon: 'sunny', label: 'Ráno' },
-  { key: 'afternoon', icon: 'partly-sunny', label: 'Odpoledne' },
-  { key: 'evening', icon: 'moon', label: 'Večer' },
+const options: { key: DepartureTime; icon: keyof typeof Ionicons.glyphMap }[] = [
+  { key: 'morning', icon: 'sunny' },
+  { key: 'afternoon', icon: 'partly-sunny' },
+  { key: 'evening', icon: 'moon' },
 ];
 
 export function DaytimeSlider({ value, onChange }: DaytimeSliderProps) {
@@ -26,10 +26,7 @@ export function DaytimeSlider({ value, onChange }: DaytimeSliderProps) {
             style={[styles.option, active && styles.optionActive]}
             onPress={() => onChange(opt.key)}
           >
-            <Ionicons name={opt.icon} size={20} color={active ? colors.chipTextActive : colors.text} />
-            <Text style={[styles.label, active && styles.labelActive]}>
-              {opt.label}
-            </Text>
+            <Ionicons name={opt.icon} size={18} color={active ? colors.chipTextActive : colors.text} />
           </Pressable>
         );
       })}
@@ -40,13 +37,12 @@ export function DaytimeSlider({ value, onChange }: DaytimeSliderProps) {
 const styles = StyleSheet.create({
   container: {
     position: 'absolute',
-    right: 16,
-    top: '35%',
+    right: 8,
+    top: '25%',
     zIndex: 10,
     backgroundColor: colors.surfaceElevated,
     borderRadius: borderRadius.lg,
     padding: spacing.xs,
-    gap: spacing.xs,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.15,
@@ -54,22 +50,13 @@ const styles = StyleSheet.create({
     elevation: 4,
   },
   option: {
+    width: 36,
+    height: 36,
     alignItems: 'center',
-    paddingVertical: spacing.sm,
-    paddingHorizontal: spacing.sm,
+    justifyContent: 'center',
     borderRadius: borderRadius.md,
-    minWidth: 64,
   },
   optionActive: {
     backgroundColor: colors.chipActive,
-  },
-  label: {
-    fontSize: fontSize.xs,
-    fontWeight: '600',
-    color: colors.text,
-    marginTop: 2,
-  },
-  labelActive: {
-    color: colors.chipTextActive,
   },
 });

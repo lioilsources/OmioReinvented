@@ -7,6 +7,7 @@ export interface Position {
   longitude: number;
   countryCode: string;
   population?: number;
+  poiTypes?: string[];
 }
 
 export interface MapBounds {
