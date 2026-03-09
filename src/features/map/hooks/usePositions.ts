@@ -1,20 +1,26 @@
 import { useQuery } from '@tanstack/react-query';
 import { getPositions } from '@/api/positions';
+import { getDiscoveryConfigForMode } from '../utils/modeConfig';
 import type { Destination, DistanceMode, MapBounds } from '@/shared/types';
 
-function boundsKey(b: MapBounds) {
-  // Round to 2 decimals so small pans don't re-fetch
+function quantize(value: number, step: number) {
+  return Math.round(value / step) * step;
+}
+
+function boundsKey(b: MapBounds, mode: DistanceMode) {
+  const step = getDiscoveryConfigForMode(mode).boundsKeyStepDeg;
+  // Quantize by mode so short mode is sensitive, long modes are stable.
   return [
-    b.northLat.toFixed(2),
-    b.southLat.toFixed(2),
-    b.westLon.toFixed(2),
-    b.eastLon.toFixed(2),
+    quantize(b.northLat, step).toFixed(3),
+    quantize(b.southLat, step).toFixed(3),
+    quantize(b.westLon, step).toFixed(3),
+    quantize(b.eastLon, step).toFixed(3),
   ].join(',');
 }
 
 export function usePositions(bounds: MapBounds | null, mode: DistanceMode) {
   return useQuery({
-    queryKey: ['positions', bounds ? boundsKey(bounds) : 'none', mode],
+    queryKey: ['positions', bounds ? boundsKey(bounds, mode) : 'none', mode],
     queryFn: async (): Promise<Destination[]> => {
       if (!bounds) return [];
       const positions = await getPositions(bounds, mode);

@@ -1,10 +1,11 @@
 import { dbApiGet } from './client';
-import { DEFAULT_LOCALE, MAX_POSITIONS } from './config';
+import { DEFAULT_LOCALE } from './config';
+import { getDiscoveryConfigForMode } from '@/features/map/utils/modeConfig';
 import type { DistanceMode, MapBounds, Position } from '@/shared/types';
 
 interface DbNode {
   id: string;
-  positionId: number;
+  positionId?: number;
   names: Record<string, string>;
   geometry: { lat: number; lon: number };
   parentReference?: {
@@ -25,85 +26,91 @@ interface ApiPosition {
   longitude: number;
   countryCode: string;
   population?: number;
+  usageFactor?: number;
 }
 
-/** Grid [cols, rows] for sampling nearby calls across the viewport */
-const MODE_GRID: Record<DistanceMode, [number, number]> = {
-  short: [1, 1],        // 1 call
-  medium: [2, 3],       // 6 calls
-  long: [3, 3],         // 9 calls
-  'extra-long': [4, 4], // 16 calls
-};
+const EARTH_METERS_PER_LAT_DEG = 111_320;
+const MIN_NEARBY_RESULTS_PER_CALL = 20;
+const MAX_NEARBY_RESULTS_PER_CALL = 200;
+const USAGE_FACTOR_WEIGHT = 200;
+const MIN_SUPPRESSION_DISTANCE_M = 5_000;
+const STATION_NODE_TYPES = [
+  'trainStation',
+  'busStation',
+  'airport',
+  'ferryTerminal',
+] as const;
+type StationNodeType = (typeof STATION_NODE_TYPES)[number];
 
-/**
- * Pick up to maxCount positions spread across the map viewport using a grid.
- * Divides bounds into cells and picks one position per cell, then fills
- * remaining slots round-robin from cells with extras.
- */
-function selectDistributed(
+function metersPerLonDegree(latDeg: number): number {
+  return EARTH_METERS_PER_LAT_DEG * Math.cos((latDeg * Math.PI) / 180);
+}
+
+function haversineDistanceMeters(
+  lat1: number,
+  lon1: number,
+  lat2: number,
+  lon2: number,
+): number {
+  const toRad = (deg: number) => (deg * Math.PI) / 180;
+  const dLat = toRad(lat2 - lat1);
+  const dLon = toRad(lon2 - lon1);
+  const a =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos(toRad(lat1)) *
+      Math.cos(toRad(lat2)) *
+      Math.sin(dLon / 2) ** 2;
+  return 2 * 6_371_000 * Math.asin(Math.sqrt(a));
+}
+
+function hotnessScore(position: ApiPosition): number {
+  return (position.population ?? 0) + (position.usageFactor ?? 0) * USAGE_FACTOR_WEIGHT;
+}
+
+function selectHotspots(
   positions: ApiPosition[],
   maxCount: number,
-  bounds: MapBounds,
+  minDistanceMeters: number,
 ): ApiPosition[] {
   if (positions.length <= maxCount) return positions;
 
-  const cols = Math.ceil(Math.sqrt(maxCount));
-  const rows = Math.ceil(maxCount / cols);
+  const ranked = [...positions].sort((a, b) => {
+    const scoreDiff = hotnessScore(b) - hotnessScore(a);
+    if (scoreDiff !== 0) return scoreDiff;
+    return (b.population ?? 0) - (a.population ?? 0);
+  });
 
-  const latStep = (bounds.northLat - bounds.southLat) / rows;
-  const lonStep = (bounds.eastLon - bounds.westLon) / cols;
+  const selected: ApiPosition[] = [];
 
-  // Assign positions to grid cells
-  const grid = new Map<string, ApiPosition[]>();
-  for (const p of positions) {
-    const row = Math.min(
-      Math.floor((p.latitude - bounds.southLat) / latStep),
-      rows - 1,
+  for (const candidate of ranked) {
+    if (selected.length >= maxCount) break;
+    const tooClose = selected.some(
+      (picked) =>
+        haversineDistanceMeters(
+          candidate.latitude,
+          candidate.longitude,
+          picked.latitude,
+          picked.longitude,
+        ) < minDistanceMeters,
     );
-    const col = Math.min(
-      Math.floor((p.longitude - bounds.westLon) / lonStep),
-      cols - 1,
-    );
-    const key = `${row},${col}`;
-    if (!grid.has(key)) grid.set(key, []);
-    grid.get(key)!.push(p);
+    if (!tooClose) selected.push(candidate);
   }
 
-  const result: ApiPosition[] = [];
-  const selected = new Set<string>();
-
-  // Sort each cell by population descending so we pick the biggest city
-  for (const [, cellPositions] of grid) {
-    cellPositions.sort((a, b) => (b.population ?? 0) - (a.population ?? 0));
-  }
-
-  // First pass: one per cell
-  for (const [, cellPositions] of grid) {
-    if (result.length >= maxCount) break;
-    result.push(cellPositions[0]);
-    selected.add(cellPositions[0].id);
-  }
-
-  // Fill remaining from cells with extras
-  if (result.length < maxCount) {
-    for (const [, cellPositions] of grid) {
-      for (const p of cellPositions) {
-        if (result.length >= maxCount) break;
-        if (!selected.has(p.id)) {
-          result.push(p);
-          selected.add(p.id);
-        }
-      }
-      if (result.length >= maxCount) break;
+  // Backfill if suppression removed too many high ranked points.
+  if (selected.length < maxCount) {
+    const pickedIds = new Set(selected.map((p) => p.id));
+    for (const candidate of ranked) {
+      if (selected.length >= maxCount) break;
+      if (!pickedIds.has(candidate.id)) selected.push(candidate);
     }
   }
 
-  return result;
+  return selected;
 }
 
 function mapNode(node: DbNode): ApiPosition {
   return {
-    id: node.positionId.toString(),
+    id: (node.positionId ?? node.id).toString(),
     name: node.names.default ?? node.names.en ?? Object.values(node.names)[0] ?? '',
     translatedName: node.names[DEFAULT_LOCALE],
     type: 'location',
@@ -111,12 +118,19 @@ function mapNode(node: DbNode): ApiPosition {
     longitude: node.geometry.lon,
     countryCode: node.parentReference?.country?.metadata?.countryCode ?? '',
     population: node.usage?.bookingCountMonthly ?? 0,
+    usageFactor: node.usage?.usageFactor,
   };
 }
 
-async function fetchNearby(lat: number, lon: number, radiusM: number, maxResults: number): Promise<DbNode[]> {
+async function fetchNearbyByType(
+  nodeType: StationNodeType,
+  lat: number,
+  lon: number,
+  radiusM: number,
+  maxResults: number,
+): Promise<DbNode[]> {
   const params = new URLSearchParams({
-    nodeType: 'location',
+    nodeType,
     lat: lat.toString(),
     lon: lon.toString(),
     distanceInMeters: radiusM.toString(),
@@ -125,34 +139,77 @@ async function fetchNearby(lat: number, lon: number, radiusM: number, maxResults
   return dbApiGet<DbNode[]>('/v1/nodes/nearby', params);
 }
 
+async function fetchNearbyStations(
+  lat: number,
+  lon: number,
+  radiusM: number,
+  maxResults: number,
+): Promise<DbNode[]> {
+  const perTypeMaxResults = Math.max(
+    1,
+    Math.floor(maxResults / STATION_NODE_TYPES.length),
+  );
+  const responses = await Promise.all(
+    STATION_NODE_TYPES.map((nodeType) =>
+      fetchNearbyByType(nodeType, lat, lon, radiusM, perTypeMaxResults),
+    ),
+  );
+  return responses.flat();
+}
+
 export async function getPositions(bounds: MapBounds, mode: DistanceMode): Promise<Position[]> {
-  const [cols, rows] = MODE_GRID[mode];
+  const discovery = getDiscoveryConfigForMode(mode);
+  const [cols, rows] = discovery.grid;
 
   const latStep = (bounds.northLat - bounds.southLat) / rows;
   const lonStep = (bounds.eastLon - bounds.westLon) / cols;
-  // Radius per sample: half-diagonal of one grid cell in meters (1° ≈ 111,320m)
-  const cellRadius = Math.ceil(Math.sqrt(latStep ** 2 + lonStep ** 2) / 2 * 111_320);
-  const maxPerCall = Math.min(200, Math.ceil(200 / (cols * rows)));
+  const centerLat = (bounds.northLat + bounds.southLat) / 2;
+
+  const cellHeightM = latStep * EARTH_METERS_PER_LAT_DEG;
+  const cellWidthM = lonStep * metersPerLonDegree(centerLat);
+  const viewportHeightM = (bounds.northLat - bounds.southLat) * EARTH_METERS_PER_LAT_DEG;
+  const viewportWidthM = (bounds.eastLon - bounds.westLon) * metersPerLonDegree(centerLat);
+  const viewportHalfDiagonalKm =
+    Math.sqrt(viewportWidthM ** 2 + viewportHeightM ** 2) / 2 / 1000;
+
+  const cellRadius = Math.ceil(
+    (Math.sqrt(cellHeightM ** 2 + cellWidthM ** 2) / 2) * discovery.sampleOverlapFactor,
+  );
+
+  const callsCount = cols * rows;
+  const maxPerCall = Math.max(
+    MIN_NEARBY_RESULTS_PER_CALL,
+    Math.min(
+      MAX_NEARBY_RESULTS_PER_CALL,
+      Math.ceil(discovery.maxApiPoints / callsCount),
+    ),
+  );
 
   const calls: Promise<DbNode[]>[] = [];
   for (let r = 0; r < rows; r++) {
     for (let c = 0; c < cols; c++) {
       const lat = bounds.southLat + latStep * (r + 0.5);
       const lon = bounds.westLon + lonStep * (c + 0.5);
-      calls.push(fetchNearby(lat, lon, cellRadius, maxPerCall));
+      calls.push(fetchNearbyStations(lat, lon, cellRadius, maxPerCall));
     }
   }
 
   const results = await Promise.all(calls);
   const totalNodes = results.reduce((s, r) => s + r.length, 0);
+  const avgCellSizeKm = Math.round(((cellWidthM + cellHeightM) / 2) / 1000);
 
-  if (__DEV__) console.log(`[Positions] ${cols}×${rows} grid, cellRadius=${Math.round(cellRadius / 1000)}km, ${totalNodes} nodes total`);
+  if (__DEV__) {
+    console.log(
+      `[Positions] mode=${mode}, viewportHalfDiag=${Math.round(viewportHalfDiagonalKm)}km (target=${discovery.targetRadiusKm}km), grid=${cols}x${rows}, avgCell=${avgCellSizeKm}km, cellRadius=${Math.round(cellRadius / 1000)}km, calls=${callsCount}, maxPerCall=${maxPerCall}, nodes=${totalNodes}`,
+    );
+  }
 
   // Merge and deduplicate by positionId
   const seen = new Set<number>();
   const all: ApiPosition[] = [];
   for (const nodes of results) {
     for (const node of nodes) {
+      if (node.positionId == null) continue;
       if (!seen.has(node.positionId)) {
         seen.add(node.positionId);
         all.push(mapNode(node));
@@ -168,12 +225,24 @@ export async function getPositions(bounds: MapBounds, mode: DistanceMode): Promi
       p.longitude <= bounds.eastLon
   );
 
-  const distributed = selectDistributed(inBounds, MAX_POSITIONS, bounds);
+  const areaPerPoint = (viewportWidthM * viewportHeightM) / discovery.maxUiPoints;
+  const minDistanceMeters = Math.max(
+    MIN_SUPPRESSION_DISTANCE_M,
+    Math.min(
+      Math.sqrt(areaPerPoint) * discovery.suppressionFactor,
+      discovery.targetRadiusKm * 1000 * 0.8,
+    ),
+  );
+  const selected = selectHotspots(inBounds, discovery.maxUiPoints, minDistanceMeters);
 
   if (__DEV__) {
-    const pairs = distributed.map((p) => `${p.name}:${p.population ?? 0}`).join(', ');
-    console.log(`[Positions] ${all.length} unique, ${inBounds.length} in bounds, ${distributed.length} selected → ${pairs}`);
+    const pairs = selected
+      .map((p) => `${p.name}:${Math.round(hotnessScore(p))}`)
+      .join(', ');
+    console.log(
+      `[Positions] ${all.length} unique, ${inBounds.length} inBounds, minDistance=${Math.round(minDistanceMeters / 1000)}km, selected=${selected.length} → ${pairs}`,
+    );
   }
 
-  return distributed;
+  return selected;
 }

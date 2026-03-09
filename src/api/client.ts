@@ -31,6 +31,11 @@ export async function apiGet<T>(path: string, params?: Record<string, string>): 
 }
 
 export async function dbApiGet<T>(path: string, params?: URLSearchParams): Promise<T> {
+  if (!DB_API_BASE_URL) {
+    throw new Error(
+      'DB-API base URL is missing. Set EXPO_PUBLIC_DB_API_BASE_URL_PROD for production mode.',
+    );
+  }
   const base = DB_API_BASE_URL.endsWith('/') ? DB_API_BASE_URL : DB_API_BASE_URL + '/';
   const url = new URL(path.replace(/^\//, ''), base);
   if (params) {

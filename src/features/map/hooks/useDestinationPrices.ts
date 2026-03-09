@@ -31,11 +31,18 @@ export function useDestinationPrices(
       );
 
       const priceMap = new Map<string, number>();
+      let fulfilled = 0;
+      let rejected = 0;
       for (const result of results) {
         if (result.status === 'fulfilled' && result.value.price !== null) {
           priceMap.set(result.value.id, result.value.price);
+          fulfilled++;
+        } else if (result.status === 'rejected') {
+          rejected++;
+          if (__DEV__) console.log(`[Prices] rejected: ${result.reason}`);
         }
       }
+      if (__DEV__) console.log(`[Prices] ${destinations.length} destinations, ${fulfilled} with price, ${rejected} rejected, ${priceMap.size} in map`);
       return priceMap;
     },
     enabled: destinations.length > 0,
