@@ -14,9 +14,21 @@ import { usePoiTypes } from '@/features/map/hooks/usePoiTypes';
 import { useSearchStore, ORIGINS } from '@/stores/useSearchStore';
 import type { Origin } from '@/stores/useSearchStore';
 import { useUIStore } from '@/stores/useUIStore';
+import { getLatitudeDeltaForMode } from '@/features/map/utils/modeConfig';
 import type { Destination, DistanceMode, MapBounds } from '@/shared/types';
 
 const BOUNDS_DEBOUNCE_MS = 500;
+
+function computeBounds(lat: number, lng: number, mode: DistanceMode): MapBounds {
+  const latDelta = getLatitudeDeltaForMode(mode);
+  const lonDelta = latDelta * 0.8;
+  return {
+    northLat: lat + latDelta / 2,
+    southLat: lat - latDelta / 2,
+    westLon: lng - lonDelta / 2,
+    eastLon: lng + lonDelta / 2,
+  };
+}
 
 export default function MapScreen() {
   const { lat, lng, loading: locationLoading } = useUserLocation();
@@ -36,6 +48,16 @@ export default function MapScreen() {
 
   const [bounds, setBounds] = useState<MapBounds | null>(null);
   const boundsTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Seed initial bounds so positions load even if onRegionChangeComplete doesn't fire
+  // (common on real iOS devices with Google Maps provider)
+  const seededRef = useRef(false);
+  useEffect(() => {
+    if (!seededRef.current) {
+      seededRef.current = true;
+      setBounds(computeBounds(origin.lat, origin.lng, distanceMode));
+    }
+  }, []);
 
   const handleBoundsChange = useCallback((newBounds: MapBounds) => {
     if (boundsTimerRef.current) clearTimeout(boundsTimerRef.current);
