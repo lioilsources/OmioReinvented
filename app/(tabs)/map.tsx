@@ -10,10 +10,12 @@ import { useMapCamera } from '@/features/map/hooks/useMapCamera';
 import { useUserLocation } from '@/features/map/hooks/useUserLocation';
 import { usePositions } from '@/features/map/hooks/usePositions';
 import { useDestinationPrices } from '@/features/map/hooks/useDestinationPrices';
+import { useSearchPolling } from '@/features/map/hooks/useSearchPolling';
 import { usePoiTypes } from '@/features/map/hooks/usePoiTypes';
 import { useSearchStore, ORIGINS } from '@/stores/useSearchStore';
 import type { Origin } from '@/stores/useSearchStore';
 import { useUIStore } from '@/stores/useUIStore';
+import { TRAVEL_MODES } from '@/api/config';
 import { getLatitudeDeltaForMode } from '@/features/map/utils/modeConfig';
 import type { Destination, DistanceMode, MapBounds } from '@/shared/types';
 
@@ -44,6 +46,7 @@ export default function MapScreen() {
   const selectedPoiType = useSearchStore((s) => s.selectedPoiType);
   const setDepartureTime = useSearchStore((s) => s.setDepartureTime);
   const setSelectedPoiType = useSearchStore((s) => s.setSelectedPoiType);
+  const activeSheet = useUIStore((s) => s.activeSheet);
   const setActiveSheet = useUIStore((s) => s.setActiveSheet);
 
   const [bounds, setBounds] = useState<MapBounds | null>(null);
@@ -92,6 +95,15 @@ export default function MapScreen() {
     return info?.minDurationMinutes ?? null;
   }, [highlightedId, priceMap]);
 
+  // Search polling: trigger real search when marker is pressed
+  const travelModes = useMemo(() => TRAVEL_MODES[distanceMode].split(','), [distanceMode]);
+  const { journeys, isPolling } = useSearchPolling({
+    fromId: origin.id,
+    toId: destination?.id ?? '',
+    travelModes,
+    enabled: activeSheet === 'journeys' && !!destination,
+  });
+
   // Set origin coords from user location on first load only
   const initializedRef = useRef(false);
   useEffect(() => {
@@ -113,8 +125,10 @@ export default function MapScreen() {
   const handleMarkerPress = useCallback(
     (dest: Destination) => {
       setHighlightedId(dest.id);
+      setDestination(dest);
+      setActiveSheet('journeys');
     },
-    []
+    [setDestination, setActiveSheet]
   );
 
   const handleSelectDestination = useCallback(
@@ -170,6 +184,10 @@ export default function MapScreen() {
         highlightedId={highlightedId}
         onSelectDestination={handleSelectDestination}
         loading={isLoading}
+        journeys={journeys}
+        isPolling={isPolling}
+        destination={destination}
+        originName={origin.name}
       />
     </View>
   );

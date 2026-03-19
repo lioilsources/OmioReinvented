@@ -2,17 +2,22 @@ import React, { useCallback, useMemo, useRef } from 'react';
 import { StyleSheet, View } from 'react-native';
 import BottomSheet from '@gorhom/bottom-sheet';
 import { DestinationList } from './DestinationList';
+import { JourneySheet } from './JourneySheet';
 import { TimeSheet } from '@/features/time/components/TimeSheet';
 import { PaxSheet } from '@/features/passengers/components/PaxSheet';
 import { useUIStore, type ActiveSheet } from '@/stores/useUIStore';
 import { colors, borderRadius } from '@/shared/constants/theme';
-import type { Destination } from '@/shared/types';
+import type { Destination, Journey } from '@/shared/types';
 
 interface MapBottomSheetProps {
   destinations: Destination[];
   highlightedId: string | null;
   onSelectDestination: (destination: Destination) => void;
   loading: boolean;
+  journeys: Journey[];
+  isPolling: boolean;
+  destination: Destination | null;
+  originName: string;
 }
 
 export function MapBottomSheet({
@@ -20,12 +25,17 @@ export function MapBottomSheet({
   highlightedId,
   onSelectDestination,
   loading,
+  journeys,
+  isPolling,
+  destination,
+  originName,
 }: MapBottomSheetProps) {
   const activeSheet = useUIStore((s) => s.activeSheet);
   const bottomSheetRef = useRef<BottomSheet>(null);
 
   const snapPoints = useMemo(() => {
     if (activeSheet === 'destinations') return ['15%', '50%', '90%'];
+    if (activeSheet === 'journeys') return ['25%', '60%', '90%'];
     return ['40%', '70%'];
   }, [activeSheet]);
 
@@ -42,6 +52,15 @@ export function MapBottomSheet({
             highlightedId={highlightedId}
             onSelect={onSelectDestination}
             loading={loading}
+          />
+        );
+      case 'journeys':
+        return (
+          <JourneySheet
+            journeys={journeys}
+            isPolling={isPolling}
+            destination={destination}
+            originName={originName}
           />
         );
       case 'time':

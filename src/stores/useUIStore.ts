@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 
-export type ActiveSheet = 'destinations' | 'time' | 'pax';
+export type ActiveSheet = 'destinations' | 'time' | 'pax' | 'journeys';
 
 interface UIState {
   activeSheet: ActiveSheet;

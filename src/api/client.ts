@@ -30,6 +30,32 @@ export async function apiGet<T>(path: string, params?: Record<string, string>): 
   return data as T;
 }
 
+export async function apiPost<T>(path: string, body: unknown): Promise<T> {
+  const base = API_BASE_URL.endsWith('/') ? API_BASE_URL : API_BASE_URL + '/';
+  const url = new URL(path.replace(/^\//, ''), base);
+
+  if (__DEV__) console.log(`[API] POST ${url.toString()}`);
+
+  const response = await fetch(url.toString(), {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${BEARER_TOKEN}`,
+      'Content-Type': 'application/json',
+      'User-Agent': 'omio-reinvented/1.0',
+    },
+    body: JSON.stringify(body),
+  });
+
+  if (!response.ok) {
+    if (__DEV__) console.log(`[API] POST ${path} ✗ ${response.status}`);
+    throw new Error(`API error: ${response.status} ${response.statusText}`);
+  }
+
+  const data = await response.json();
+  if (__DEV__) console.log(`[API] POST ${path} → searchId=${data?.searchId ?? '?'}, status=${data?.status ?? '?'}`);
+  return data as T;
+}
+
 export async function dbApiGet<T>(path: string, params?: URLSearchParams): Promise<T> {
   if (!DB_API_BASE_URL) {
     throw new Error(
