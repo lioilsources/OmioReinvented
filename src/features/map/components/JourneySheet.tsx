@@ -1,10 +1,9 @@
 import React from 'react';
-import { View, Text, StyleSheet, Pressable } from 'react-native';
+import { View, Text, StyleSheet } from 'react-native';
 import { BottomSheetFlatList } from '@gorhom/bottom-sheet';
 import { JourneyCard } from '@/features/results/components/JourneyCard';
 import { JourneyFilterBar } from '@/features/results/components/JourneyFilterBar';
 import { useJourneySort } from '@/features/results/hooks/useJourneySort';
-import { useUIStore } from '@/stores/useUIStore';
 import { colors, fontSize, spacing } from '@/shared/constants/theme';
 import type { Destination, Journey } from '@/shared/types';
 
@@ -21,21 +20,21 @@ export function JourneySheet({
   destination,
   originName,
 }: JourneySheetProps) {
-  const setActiveSheet = useUIStore((s) => s.setActiveSheet);
   const { sorted, sortMode, setSortMode } = useJourneySort(journeys, 'timetable');
 
-  const handleBack = () => {
-    setActiveSheet('destinations');
-  };
+  if (!destination) {
+    return (
+      <View style={styles.empty}>
+        <Text style={styles.emptyText}>Select a destination on the map</Text>
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <Pressable onPress={handleBack} hitSlop={8}>
-          <Text style={styles.backButton}>{'<'} Back</Text>
-        </Pressable>
         <Text style={styles.route} numberOfLines={1}>
-          {originName} → {destination?.name ?? ''}
+          {originName} → {destination.name}
         </Text>
         <Text style={styles.subtitle}>
           {isPolling
@@ -57,11 +56,7 @@ export function JourneySheet({
             <View style={styles.empty}>
               <Text style={styles.emptyText}>Searching for journeys...</Text>
             </View>
-          ) : (
-            <View style={styles.empty}>
-              <Text style={styles.emptyText}>No journeys found</Text>
-            </View>
-          )
+          ) : null
         }
         contentContainerStyle={styles.list}
       />
@@ -78,12 +73,6 @@ const styles = StyleSheet.create({
     paddingTop: spacing.sm,
     paddingBottom: spacing.xs,
     gap: 2,
-  },
-  backButton: {
-    fontSize: fontSize.sm,
-    color: colors.primary,
-    fontWeight: '600',
-    marginBottom: spacing.xs,
   },
   route: {
     fontSize: fontSize.lg,

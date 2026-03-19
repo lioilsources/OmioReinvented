@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 
-export type ActiveSheet = 'destinations' | 'time' | 'pax' | 'journeys';
+export type ActiveSheet = 'journeys';
 
 interface UIState {
   activeSheet: ActiveSheet;
@@ -11,7 +11,7 @@ interface UIState {
 }
 
 export const useUIStore = create<UIState>((set) => ({
-  activeSheet: 'destinations',
+  activeSheet: 'journeys',
   mapInteracting: false,
 
   setActiveSheet: (activeSheet) => set({ activeSheet }),

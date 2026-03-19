@@ -14,7 +14,6 @@ import { useSearchPolling } from '@/features/map/hooks/useSearchPolling';
 import { usePoiTypes } from '@/features/map/hooks/usePoiTypes';
 import { useSearchStore, ORIGINS } from '@/stores/useSearchStore';
 import type { Origin } from '@/stores/useSearchStore';
-import { useUIStore } from '@/stores/useUIStore';
 import { TRAVEL_MODES } from '@/api/config';
 import { getLatitudeDeltaForMode } from '@/features/map/utils/modeConfig';
 import type { Destination, DistanceMode, MapBounds } from '@/shared/types';
@@ -46,8 +45,6 @@ export default function MapScreen() {
   const selectedPoiType = useSearchStore((s) => s.selectedPoiType);
   const setDepartureTime = useSearchStore((s) => s.setDepartureTime);
   const setSelectedPoiType = useSearchStore((s) => s.setSelectedPoiType);
-  const activeSheet = useUIStore((s) => s.activeSheet);
-  const setActiveSheet = useUIStore((s) => s.setActiveSheet);
 
   const [bounds, setBounds] = useState<MapBounds | null>(null);
   const boundsTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -101,7 +98,7 @@ export default function MapScreen() {
     fromId: origin.id,
     toId: destination?.id ?? '',
     travelModes,
-    enabled: activeSheet === 'journeys' && !!destination,
+    enabled: !!destination,
   });
 
   // Set origin coords from user location on first load only
@@ -109,7 +106,6 @@ export default function MapScreen() {
   useEffect(() => {
     if (!locationLoading && !initializedRef.current) {
       initializedRef.current = true;
-      // Keep the default origin (Prague) — location is just used for initial map center
     }
   }, [locationLoading]);
 
@@ -126,18 +122,8 @@ export default function MapScreen() {
     (dest: Destination) => {
       setHighlightedId(dest.id);
       setDestination(dest);
-      setActiveSheet('journeys');
     },
-    [setDestination, setActiveSheet]
-  );
-
-  const handleSelectDestination = useCallback(
-    (dest: Destination) => {
-      setDestination(dest);
-      setHighlightedId(dest.id);
-      setActiveSheet('time');
-    },
-    [setDestination, setActiveSheet]
+    [setDestination]
   );
 
   const handleOriginSelect = useCallback(
@@ -145,10 +131,9 @@ export default function MapScreen() {
       setOrigin(newOrigin);
       setDestination(null);
       setHighlightedId(null);
-      setActiveSheet('destinations');
       animateToMode(newOrigin.lat, newOrigin.lng, distanceMode);
     },
-    [setOrigin, setDestination, setActiveSheet, animateToMode, distanceMode]
+    [setOrigin, setDestination, animateToMode, distanceMode]
   );
 
   return (
@@ -180,10 +165,6 @@ export default function MapScreen() {
       />
       <OriginPill name={origin.name} origins={ORIGINS} onSelect={handleOriginSelect} />
       <MapBottomSheet
-        destinations={destinations}
-        highlightedId={highlightedId}
-        onSelectDestination={handleSelectDestination}
-        loading={isLoading}
         journeys={journeys}
         isPolling={isPolling}
         destination={destination}
