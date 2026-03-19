@@ -5,6 +5,7 @@ import type { DepartureTime } from '@/shared/types';
 interface DiscoverySchedule {
   priceCents?: number;
   departureAt?: string;
+  arrivalAt?: string;
 }
 
 interface DiscoveryResult {
@@ -18,6 +19,11 @@ interface DiscoveryResponse {
 }
 
 export type DaytimePrices = Record<DepartureTime, number | null>;
+
+export interface DiscoveryInfo {
+  prices: DaytimePrices;
+  minDurationMinutes: number | null;
+}
 
 export async function getDiscoveryPrice(
   fromId: string,
@@ -79,7 +85,7 @@ export async function getDiscoveryPricesByDaytime(
   toId: string,
   outboundDateStart: string,
   travelModes: string,
-): Promise<DaytimePrices> {
+): Promise<DiscoveryInfo> {
   const params = {
     fromId,
     toId,
@@ -103,11 +109,22 @@ export async function getDiscoveryPricesByDaytime(
     afternoon: Infinity,
     evening: Infinity,
   };
+  let minDuration = Infinity;
 
   if (resp.data) {
     for (const result of resp.data) {
       if (!result.outboundSchedules) continue;
       for (const schedule of result.outboundSchedules) {
+        // Track min duration from arrivalAt - departureAt
+        if (schedule.departureAt && schedule.arrivalAt) {
+          const dep = new Date(schedule.departureAt).getTime();
+          const arr = new Date(schedule.arrivalAt).getTime();
+          if (arr > dep) {
+            const durationMin = (arr - dep) / 60_000;
+            if (durationMin < minDuration) minDuration = durationMin;
+          }
+        }
+
         if (!schedule.priceCents || schedule.priceCents <= 0) continue;
         if (schedule.departureAt) {
           const bucket = getDaytimeBucket(schedule.departureAt);
@@ -126,13 +143,14 @@ export async function getDiscoveryPricesByDaytime(
     }
   }
 
-  const result: DaytimePrices = {
+  const prices: DaytimePrices = {
     morning: bucketMins.morning === Infinity ? null : bucketMins.morning / 100,
     afternoon: bucketMins.afternoon === Infinity ? null : bucketMins.afternoon / 100,
     evening: bucketMins.evening === Infinity ? null : bucketMins.evening / 100,
   };
+  const minDurationMinutes = minDuration === Infinity ? null : Math.round(minDuration);
 
-  if (__DEV__) console.log(`[Discovery/daytime] ${toId} → morning=${result.morning}, afternoon=${result.afternoon}, evening=${result.evening}`);
+  if (__DEV__) console.log(`[Discovery/daytime] ${toId} → morning=${prices.morning}, afternoon=${prices.afternoon}, evening=${prices.evening}, minDuration=${minDurationMinutes}min`);
 
-  return result;
+  return { prices, minDurationMinutes };
 }

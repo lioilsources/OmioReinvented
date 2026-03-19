@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { getDiscoveryPricesByDaytime } from '@/api/discovery';
-import type { DaytimePrices } from '@/api/discovery';
+import type { DiscoveryInfo } from '@/api/discovery';
 import { TRAVEL_MODES } from '@/api/config';
 import type { Destination, DistanceMode } from '@/shared/types';
 
@@ -20,23 +20,23 @@ export function useDestinationPrices(
 
   return useQuery({
     queryKey: ['prices', fromId, ids, distanceMode],
-    queryFn: async (): Promise<Map<string, DaytimePrices>> => {
+    queryFn: async (): Promise<Map<string, DiscoveryInfo>> => {
       const travelModes = TRAVEL_MODES[distanceMode];
       const date = getTomorrowDate();
 
       const results = await Promise.allSettled(
         destinations.map(async (dest) => {
-          const prices = await getDiscoveryPricesByDaytime(fromId, dest.id, date, travelModes);
-          return { id: dest.id, prices };
+          const info = await getDiscoveryPricesByDaytime(fromId, dest.id, date, travelModes);
+          return { id: dest.id, info };
         }),
       );
 
-      const priceMap = new Map<string, DaytimePrices>();
+      const infoMap = new Map<string, DiscoveryInfo>();
       let fulfilled = 0;
       let rejected = 0;
       for (const result of results) {
         if (result.status === 'fulfilled') {
-          priceMap.set(result.value.id, result.value.prices);
+          infoMap.set(result.value.id, result.value.info);
           fulfilled++;
         } else {
           rejected++;
@@ -44,7 +44,7 @@ export function useDestinationPrices(
         }
       }
       if (__DEV__) console.log(`[Prices] ${destinations.length} destinations, ${fulfilled} with prices, ${rejected} rejected`);
-      return priceMap;
+      return infoMap;
     },
     enabled: destinations.length > 0,
     staleTime: 120_000,

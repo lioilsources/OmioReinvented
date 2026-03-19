@@ -73,8 +73,8 @@ export default function MapScreen() {
   const destinations = useMemo<Destination[]>(() => {
     if (!priceMap) return rawDestinations;
     return rawDestinations.map((d) => {
-      const daytimePrices = priceMap.get(d.id);
-      const price = daytimePrices ? daytimePrices[departureTime] : null;
+      const info = priceMap.get(d.id);
+      const price = info ? info.prices[departureTime] : null;
       return {
         ...d,
         priceFrom: price ?? d.priceFrom,
@@ -84,6 +84,13 @@ export default function MapScreen() {
 
   const poiTypes = usePoiTypes(destinations);
   const [highlightedId, setHighlightedId] = useState<string | null>(null);
+
+  // Get min duration for the highlighted destination
+  const highlightedDuration = useMemo(() => {
+    if (!highlightedId || !priceMap) return null;
+    const info = priceMap.get(highlightedId);
+    return info?.minDurationMinutes ?? null;
+  }, [highlightedId, priceMap]);
 
   // Set origin coords from user location on first load only
   const initializedRef = useRef(false);
@@ -139,6 +146,7 @@ export default function MapScreen() {
         mode={distanceMode}
         destinations={destinations}
         highlightedId={highlightedId}
+        highlightedDuration={highlightedDuration}
         selectedPoiType={selectedPoiType}
         onMarkerPress={handleMarkerPress}
         onBoundsChange={handleBoundsChange}
