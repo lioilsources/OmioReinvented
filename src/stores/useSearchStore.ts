@@ -17,6 +17,8 @@ export const ORIGINS: Origin[] = [
   { id: '388498', lat: 41.89474, lng: 12.4839, name: 'Rome' },
   { id: '378655', lat: 40.4165, lng: -3.70256, name: 'Madrid' },
   { id: '379727', lat: 48.85341, lng: 2.3488, name: 'Paris' },
+  { id: '368571', lat: 48.20849, lng: 16.37208, name: 'Vienna' },
+  { id: '398532', lat: 52.22977, lng: 21.01178, name: 'Warsaw' },
 ];
 
 interface SearchState {
