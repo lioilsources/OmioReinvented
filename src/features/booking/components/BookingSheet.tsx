@@ -1,7 +1,9 @@
 import React from 'react';
 import { View, Text, StyleSheet, Pressable, ActivityIndicator } from 'react-native';
+import { BottomSheetScrollView } from '@gorhom/bottom-sheet';
 import { colors, fontSize, spacing, borderRadius } from '@/shared/constants/theme';
 import type { BookingPhase } from '../hooks/useBookingFlow';
+import { NavigationMap } from './NavigationMap';
 
 const STEPS: { phase: BookingPhase; label: string }[] = [
   { phase: 'fetching_offers', label: 'Finding best offer' },
@@ -23,6 +25,7 @@ interface BookingSheetProps {
   bookingId: string | null;
   error: string | null;
   journeyProvider: string;
+  stationName: string;
   onCancel: () => void;
   onRetry: () => void;
 }
@@ -32,12 +35,13 @@ export function BookingSheet({
   bookingId,
   error,
   journeyProvider,
+  stationName,
   onCancel,
   onRetry,
 }: BookingSheetProps) {
   if (phase === 'completed') {
     return (
-      <View style={styles.container}>
+      <BottomSheetScrollView contentContainerStyle={styles.scrollContainer}>
         <View style={styles.successBox}>
           <Text style={styles.successIcon}>✓</Text>
           <Text style={styles.successTitle}>Booked!</Text>
@@ -48,10 +52,11 @@ export function BookingSheet({
             <Text style={styles.bookingId}>Booking: {bookingId}</Text>
           )}
         </View>
+        <NavigationMap stationName={stationName} />
         <Pressable style={styles.backButton} onPress={onCancel}>
           <Text style={styles.backButtonText}>Back to results</Text>
         </Pressable>
-      </View>
+      </BottomSheetScrollView>
     );
   }
 
@@ -140,6 +145,12 @@ const styles = StyleSheet.create({
     padding: spacing.md,
     alignItems: 'center',
     gap: spacing.md,
+  },
+  scrollContainer: {
+    padding: spacing.md,
+    alignItems: 'center',
+    gap: spacing.md,
+    paddingBottom: spacing.xl,
   },
   title: {
     fontSize: fontSize.lg,
@@ -275,6 +286,7 @@ const styles = StyleSheet.create({
     fontSize: fontSize.md,
   },
   backButton: {
+    width: '100%',
     backgroundColor: colors.primary,
     borderRadius: borderRadius.sm,
     paddingVertical: spacing.sm,

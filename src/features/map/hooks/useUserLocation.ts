@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
 import * as Location from 'expo-location';
 
-const PRAGUE = { lat: 50.0755, lng: 14.4378 };
+// Křižíkova 237, 186 00 Praha 8-Karlín
+const PRAGUE = { lat: 50.0928, lng: 14.4539 };
 
 interface UserLocation {
   lat: number;
@@ -19,6 +20,12 @@ export function useUserLocation(): UserLocation {
     let cancelled = false;
 
     async function getLocation() {
+      // In dev, skip GPS (simulator returns wrong location) and use fallback
+      if (__DEV__) {
+        if (!cancelled) setLocation({ ...PRAGUE, loading: false });
+        return;
+      }
+
       try {
         const { status } = await Location.requestForegroundPermissionsAsync();
         if (status !== 'granted') {

@@ -16,11 +16,6 @@ export function JourneyFilterBar({
   return (
     <View style={styles.bar}>
       <Chip
-        label="Timetable"
-        active={sortMode === 'timetable'}
-        onPress={() => onSortChange('timetable')}
-      />
-      <Chip
         label="Cheapest"
         active={sortMode === 'cheapest'}
         onPress={() => onSortChange('cheapest')}
@@ -29,6 +24,11 @@ export function JourneyFilterBar({
         label="Fastest"
         active={sortMode === 'fastest'}
         onPress={() => onSortChange('fastest')}
+      />
+      <Chip
+        label="Timetable"
+        active={sortMode === 'timetable'}
+        onPress={() => onSortChange('timetable')}
       />
     </View>
   );

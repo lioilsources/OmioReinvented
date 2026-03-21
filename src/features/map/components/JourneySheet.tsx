@@ -1,11 +1,64 @@
-import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import React, { useEffect, useRef } from 'react';
+import { View, Text, StyleSheet, Animated } from 'react-native';
 import { BottomSheetFlatList } from '@gorhom/bottom-sheet';
 import { JourneyCard } from '@/features/results/components/JourneyCard';
 import { JourneyFilterBar } from '@/features/results/components/JourneyFilterBar';
 import { useJourneySort } from '@/features/results/hooks/useJourneySort';
-import { colors, fontSize, spacing } from '@/shared/constants/theme';
+import { colors, fontSize, spacing, borderRadius } from '@/shared/constants/theme';
 import type { Destination, Journey } from '@/shared/types';
+
+function SearchProgressBar({ journeyCount }: { journeyCount: number }) {
+  const progress = useRef(new Animated.Value(0)).current;
+  const pulse = useRef(new Animated.Value(1)).current;
+
+  useEffect(() => {
+    // Progress grows as results come in, caps at 90% until done
+    const target = Math.min(0.9, 0.15 + journeyCount * 0.05);
+    Animated.timing(progress, {
+      toValue: target,
+      duration: 600,
+      useNativeDriver: false,
+    }).start();
+  }, [journeyCount]);
+
+  useEffect(() => {
+    const anim = Animated.loop(
+      Animated.sequence([
+        Animated.timing(pulse, { toValue: 0.4, duration: 800, useNativeDriver: false }),
+        Animated.timing(pulse, { toValue: 1, duration: 800, useNativeDriver: false }),
+      ]),
+    );
+    anim.start();
+    return () => anim.stop();
+  }, []);
+
+  const width = progress.interpolate({
+    inputRange: [0, 1],
+    outputRange: ['0%', '100%'],
+  });
+
+  return (
+    <View style={progressStyles.track}>
+      <Animated.View style={[progressStyles.fill, { width, opacity: pulse }]} />
+    </View>
+  );
+}
+
+const progressStyles = StyleSheet.create({
+  track: {
+    height: 3,
+    backgroundColor: colors.border,
+    borderRadius: 2,
+    marginHorizontal: spacing.md,
+    marginBottom: spacing.xs,
+    overflow: 'hidden',
+  },
+  fill: {
+    height: 3,
+    backgroundColor: colors.primary,
+    borderRadius: 2,
+  },
+});
 
 interface JourneySheetProps {
   journeys: Journey[];
@@ -22,7 +75,7 @@ export function JourneySheet({
   originName,
   onJourneyPress,
 }: JourneySheetProps) {
-  const { sorted, sortMode, setSortMode } = useJourneySort(journeys, 'timetable');
+  const { sorted, sortMode, setSortMode } = useJourneySort(journeys, 'cheapest');
 
   if (!destination) {
     return (
@@ -44,6 +97,8 @@ export function JourneySheet({
             : `${journeys.length} journeys`}
         </Text>
       </View>
+
+      {isPolling && <SearchProgressBar journeyCount={journeys.length} />}
 
       {journeys.length > 0 && (
         <JourneyFilterBar sortMode={sortMode} onSortChange={setSortMode} />
