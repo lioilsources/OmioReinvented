@@ -1,62 +1,88 @@
 import React, { useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, Animated } from 'react-native';
+import { View, Text, StyleSheet, Animated, Easing } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { BottomSheetFlatList } from '@gorhom/bottom-sheet';
 import { JourneyCard } from '@/features/results/components/JourneyCard';
 import { JourneyFilterBar } from '@/features/results/components/JourneyFilterBar';
 import { useJourneySort } from '@/features/results/hooks/useJourneySort';
-import { colors, fontSize, spacing, borderRadius } from '@/shared/constants/theme';
+import { colors, fontSize, spacing } from '@/shared/constants/theme';
 import type { Destination, Journey } from '@/shared/types';
 
-function SearchProgressBar({ journeyCount }: { journeyCount: number }) {
-  const progress = useRef(new Animated.Value(0)).current;
-  const pulse = useRef(new Animated.Value(1)).current;
+const VEHICLES: { icon: keyof typeof Ionicons.glyphMap }[] = [
+  { icon: 'airplane' },
+  { icon: 'train' },
+  { icon: 'bus' },
+  { icon: 'boat' },
+];
+
+function SearchAnimation() {
+  const anims = VEHICLES.map(() => useRef(new Animated.Value(-1)).current);
 
   useEffect(() => {
-    // Progress grows as results come in, caps at 90% until done
-    const target = Math.min(0.9, 0.15 + journeyCount * 0.05);
-    Animated.timing(progress, {
-      toValue: target,
-      duration: 600,
-      useNativeDriver: false,
-    }).start();
-  }, [journeyCount]);
-
-  useEffect(() => {
-    const anim = Animated.loop(
-      Animated.sequence([
-        Animated.timing(pulse, { toValue: 0.4, duration: 800, useNativeDriver: false }),
-        Animated.timing(pulse, { toValue: 1, duration: 800, useNativeDriver: false }),
-      ]),
+    const animations = anims.map((anim, i) =>
+      Animated.loop(
+        Animated.sequence([
+          Animated.delay(i * 400),
+          Animated.timing(anim, {
+            toValue: 1,
+            duration: 1600,
+            easing: Easing.inOut(Easing.ease),
+            useNativeDriver: true,
+          }),
+          Animated.timing(anim, {
+            toValue: -1,
+            duration: 0,
+            useNativeDriver: true,
+          }),
+        ]),
+      ),
     );
-    anim.start();
-    return () => anim.stop();
+    Animated.parallel(animations).start();
+    return () => animations.forEach((a) => a.stop());
   }, []);
 
-  const width = progress.interpolate({
-    inputRange: [0, 1],
-    outputRange: ['0%', '100%'],
-  });
-
   return (
-    <View style={progressStyles.track}>
-      <Animated.View style={[progressStyles.fill, { width, opacity: pulse }]} />
+    <View style={animStyles.container}>
+      <View style={animStyles.track}>
+        {VEHICLES.map((v, i) => {
+          const translateX = anims[i].interpolate({
+            inputRange: [-1, 1],
+            outputRange: [-30, 220],
+          });
+          const opacity = anims[i].interpolate({
+            inputRange: [-1, -0.6, 0, 0.6, 1],
+            outputRange: [0, 1, 1, 1, 0],
+          });
+          return (
+            <Animated.View
+              key={v.icon}
+              style={[
+                animStyles.iconWrap,
+                { transform: [{ translateX }], opacity },
+              ]}
+            >
+              <Ionicons name={v.icon} size={20} color={colors.primary} />
+            </Animated.View>
+          );
+        })}
+      </View>
     </View>
   );
 }
 
-const progressStyles = StyleSheet.create({
-  track: {
-    height: 3,
-    backgroundColor: colors.border,
-    borderRadius: 2,
-    marginHorizontal: spacing.md,
-    marginBottom: spacing.xs,
-    overflow: 'hidden',
+const animStyles = StyleSheet.create({
+  container: {
+    alignItems: 'center',
+    paddingVertical: spacing.sm,
   },
-  fill: {
-    height: 3,
-    backgroundColor: colors.primary,
-    borderRadius: 2,
+  track: {
+    width: 220,
+    height: 28,
+    position: 'relative',
+  },
+  iconWrap: {
+    position: 'absolute',
+    top: 0,
   },
 });
 
@@ -98,7 +124,7 @@ export function JourneySheet({
         </Text>
       </View>
 
-      {isPolling && <SearchProgressBar journeyCount={journeys.length} />}
+      {isPolling && <SearchAnimation />}
 
       {journeys.length > 0 && (
         <JourneyFilterBar sortMode={sortMode} onSortChange={setSortMode} />
@@ -110,7 +136,7 @@ export function JourneySheet({
         renderItem={({ item }: { item: Journey }) => (
           <JourneyCard
             journey={item}
-            onPress={onJourneyPress ? () => onJourneyPress(item) : undefined}
+            onBuy={onJourneyPress ? () => onJourneyPress(item) : undefined}
           />
         )}
         ListEmptyComponent={

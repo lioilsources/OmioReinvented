@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet, Pressable } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { TransportIcon } from '@/shared/components/TransportIcon';
 import { JourneyLeg } from './JourneyLeg';
 import { colors, borderRadius, fontSize, spacing } from '@/shared/constants/theme';
@@ -9,6 +10,7 @@ import { useSearchStore } from '@/stores/useSearchStore';
 interface JourneyCardProps {
   journey: Journey;
   onPress?: () => void;
+  onBuy?: () => void;
 }
 
 function formatTime(iso: string): string {
@@ -23,7 +25,7 @@ function formatDuration(minutes: number): string {
   return m > 0 ? `${h}h ${m}m` : `${h}h`;
 }
 
-export function JourneyCard({ journey, onPress }: JourneyCardProps) {
+export function JourneyCard({ journey, onPress, onBuy }: JourneyCardProps) {
   const pax = useSearchStore((s) => s.pax);
   const getTotalPrice = useSearchStore((s) => s.getTotalPrice);
   const pricePerPax = journey.price;
@@ -61,12 +63,16 @@ export function JourneyCard({ journey, onPress }: JourneyCardProps) {
             </Text>
           )}
         </View>
-        <View style={styles.priceCol}>
-          <Text style={styles.price}>€{totalPrice.toFixed(2)}</Text>
-          {(pax.adults > 1 || pax.children.length > 0) && (
-            <Text style={styles.perPax}>€{pricePerPax}/pax</Text>
-          )}
-        </View>
+        {onBuy ? (
+          <Pressable style={styles.buyButton} onPress={onBuy}>
+            <Text style={styles.buyPrice}>€{totalPrice.toFixed(2)}</Text>
+            <Ionicons name="cart" size={14} color="#fff" />
+          </Pressable>
+        ) : (
+          <View style={styles.priceCol}>
+            <Text style={styles.price}>€{totalPrice.toFixed(2)}</Text>
+          </View>
+        )}
       </View>
 
       {journey.legs.length > 1 && (
@@ -154,5 +160,19 @@ const styles = StyleSheet.create({
     borderTopColor: colors.surface,
     paddingTop: spacing.sm,
     gap: spacing.xs,
+  },
+  buyButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    backgroundColor: colors.primary,
+    borderRadius: borderRadius.sm,
+    paddingVertical: spacing.xs,
+    paddingHorizontal: spacing.sm,
+  },
+  buyPrice: {
+    color: '#fff',
+    fontWeight: '700',
+    fontSize: fontSize.lg,
   },
 });

@@ -12,10 +12,13 @@ const MAP_HEIGHT = 440;
 
 interface NavigationMapProps {
   stationName: string;
+  stationLat?: number;
+  stationLng?: number;
 }
 
 interface RouteInfo {
   polyline: { latitude: number; longitude: number }[];
+  endCoord?: { latitude: number; longitude: number };
   distance: string;
   duration: string;
 }
@@ -51,7 +54,7 @@ function decodePolyline(encoded: string): { latitude: number; longitude: number 
   return points;
 }
 
-export function NavigationMap({ stationName }: NavigationMapProps) {
+export function NavigationMap({ stationName, stationLat, stationLng }: NavigationMapProps) {
   const mapRef = useRef<MapView>(null);
   const userLocation = useUserLocation();
   const origin = useSearchStore((s) => s.origin);
@@ -59,7 +62,15 @@ export function NavigationMap({ stationName }: NavigationMapProps) {
   const [loading, setLoading] = useState(true);
 
   const userCoord = { latitude: userLocation.lat, longitude: userLocation.lng };
-  const stationCoord = { latitude: origin.lat, longitude: origin.lng };
+
+  // Priority: API position coords > Directions API resolved > city-center fallback
+  const hasStationCoords = stationLat != null && stationLng != null;
+  const fallbackCoord = { latitude: origin.lat, longitude: origin.lng };
+
+  // Resolved station coord: from props, or from Directions API response, or city fallback
+  const stationCoord = hasStationCoords
+    ? { latitude: stationLat, longitude: stationLng }
+    : (route?.endCoord ?? fallbackCoord);
 
   useEffect(() => {
     if (userLocation.loading) return;
@@ -70,8 +81,11 @@ export function NavigationMap({ stationName }: NavigationMapProps) {
     const fetchDirections = async () => {
       try {
         const originStr = `${userLocation.lat},${userLocation.lng}`;
-        const destStr = `${origin.lat},${origin.lng}`;
-        const url = `https://maps.googleapis.com/maps/api/directions/json?origin=${originStr}&destination=${destStr}&mode=walking&key=${GOOGLE_MAPS_API_KEY}`;
+        // Use exact coords if available, otherwise let Google resolve by name
+        const destStr = hasStationCoords
+          ? `${stationLat},${stationLng}`
+          : encodeURIComponent(stationName);
+        const url = `https://maps.googleapis.com/maps/api/directions/json?origin=${originStr}&destination=${destStr}&mode=transit&key=${GOOGLE_MAPS_API_KEY}`;
 
         if (__DEV__) console.log('[NavigationMap] Fetching directions:', url);
 
@@ -83,8 +97,10 @@ export function NavigationMap({ stationName }: NavigationMapProps) {
         if (data.routes?.length > 0) {
           const leg = data.routes[0].legs[0];
           const points = decodePolyline(data.routes[0].overview_polyline.points);
+          const endLoc = leg.end_location;
           setRoute({
             polyline: points,
+            endCoord: { latitude: endLoc.lat, longitude: endLoc.lng },
             distance: leg.distance.text,
             duration: leg.duration.text,
           });
@@ -102,15 +118,24 @@ export function NavigationMap({ stationName }: NavigationMapProps) {
       controller.abort();
       clearTimeout(timeout);
     };
-  }, [userLocation.loading, userLocation.lat, userLocation.lng, origin.lat, origin.lng]);
+  }, [userLocation.loading, userLocation.lat, userLocation.lng, stationLat, stationLng, stationName]);
 
-  // Fit map to show both user and station once ready
-  const handleMapReady = () => {
+  const fitMap = () => {
     mapRef.current?.fitToCoordinates([userCoord, stationCoord], {
       edgePadding: { top: 60, right: 60, bottom: 60, left: 60 },
       animated: false,
     });
   };
+
+  // Re-fit when route loads (station coord may refine from Directions API)
+  useEffect(() => {
+    if (!loading && !userLocation.loading) {
+      mapRef.current?.fitToCoordinates([userCoord, stationCoord], {
+        edgePadding: { top: 60, right: 60, bottom: 60, left: 60 },
+        animated: true,
+      });
+    }
+  }, [loading, route]);
 
   if (userLocation.loading) {
     return (
@@ -120,7 +145,6 @@ export function NavigationMap({ stationName }: NavigationMapProps) {
     );
   }
 
-  // Directions API route or straight line fallback
   const routeCoords = route?.polyline ?? [userCoord, stationCoord];
 
   return (
@@ -132,7 +156,7 @@ export function NavigationMap({ stationName }: NavigationMapProps) {
           style={styles.map}
           customMapStyle={mutedMapStyle}
           showsMyLocationButton={false}
-          onMapReady={handleMapReady}
+          onMapReady={fitMap}
         >
           <Marker
             coordinate={userCoord}

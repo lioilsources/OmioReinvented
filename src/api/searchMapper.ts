@@ -48,9 +48,15 @@ export function mapSearchResponse(response: SearchResponse): Journey[] {
           const seg = segMap.get(String(segId));
           if (!seg) return null;
           const segCarrier = resolveCarrierName(seg.carrierId, carriers);
+          const fromPos = seg.departurePositionId ? posMap.get(seg.departurePositionId) : undefined;
+          const toPos = seg.arrivalPositionId ? posMap.get(seg.arrivalPositionId) : undefined;
           return {
-            from: resolvePositionName(seg.departurePositionId, posMap),
-            to: resolvePositionName(seg.arrivalPositionId, posMap),
+            from: fromPos?.name ?? seg.departurePositionId ?? '',
+            fromLat: fromPos?.lat,
+            fromLng: fromPos?.lon,
+            to: toPos?.name ?? seg.arrivalPositionId ?? '',
+            toLat: toPos?.lat,
+            toLng: toPos?.lon,
             departure: seg.departureTime,
             arrival: seg.arrivalTime,
             transportType,

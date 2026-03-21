@@ -40,6 +40,8 @@ export interface SearchPosition {
   id: string;
   name: string;
   cityName?: string;
+  lat?: number;
+  lon?: number;
 }
 
 export interface SearchResponse {

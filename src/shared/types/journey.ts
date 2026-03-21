@@ -2,7 +2,11 @@ import type { TransportType } from './search';
 
 export interface JourneyLeg {
   from: string;
+  fromLat?: number;
+  fromLng?: number;
   to: string;
+  toLat?: number;
+  toLng?: number;
   departure: string;
   arrival: string;
   transportType: TransportType;

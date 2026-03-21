@@ -67,6 +67,8 @@ export function MapBottomSheet({
           error={booking.error}
           journeyProvider={bookingJourney.provider}
           stationName={bookingJourney.legs[0]?.from ?? 'Station'}
+          stationLat={bookingJourney.legs[0]?.fromLat}
+          stationLng={bookingJourney.legs[0]?.fromLng}
           onCancel={handleBookingCancel}
           onRetry={handleBookingRetry}
         />
