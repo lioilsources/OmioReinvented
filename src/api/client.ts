@@ -1,4 +1,4 @@
-import { API_BASE_URL, BEARER_TOKEN, DB_API_BASE_URL } from './config';
+import { API_BASE_URL, PROD_API_BASE_URL, BEARER_TOKEN, DB_API_BASE_URL } from './config';
 
 export async function apiGet<T>(path: string, params?: Record<string, string>): Promise<T> {
   const base = API_BASE_URL.endsWith('/') ? API_BASE_URL : API_BASE_URL + '/';
@@ -53,6 +53,33 @@ export async function apiPost<T>(path: string, body: unknown): Promise<T> {
 
   const data = await response.json();
   if (__DEV__) console.log(`[API] POST ${path} → searchId=${data?.searchId ?? '?'}, status=${data?.status ?? '?'}`);
+  return data as T;
+}
+
+export async function prodApiGet<T>(path: string, params?: Record<string, string>): Promise<T> {
+  const base = PROD_API_BASE_URL.endsWith('/') ? PROD_API_BASE_URL : PROD_API_BASE_URL + '/';
+  const url = new URL(path.replace(/^\//, ''), base);
+  if (params) {
+    Object.entries(params).forEach(([key, value]) => {
+      if (value) url.searchParams.set(key, value);
+    });
+  }
+
+  if (__DEV__) console.log(`[API-PROD] GET ${url.toString()}`);
+
+  const response = await fetch(url.toString(), {
+    headers: {
+      Authorization: `Bearer ${BEARER_TOKEN}`,
+      'User-Agent': 'omio-reinvented/1.0',
+    },
+  });
+
+  if (!response.ok) {
+    if (__DEV__) console.log(`[API-PROD] ${path} ✗ ${response.status}`);
+    throw new Error(`API error: ${response.status} ${response.statusText}`);
+  }
+
+  const data = await response.json();
   return data as T;
 }
 

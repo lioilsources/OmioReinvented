@@ -1,4 +1,4 @@
-import { apiGet } from './client';
+import { prodApiGet } from './client';
 import { DEFAULT_CURRENCY, DEFAULT_LOCALE } from './config';
 import type { DepartureTime } from '@/shared/types';
 
@@ -43,7 +43,7 @@ export async function getDiscoveryPrice(
 
   if (__DEV__) console.log(`[Discovery] ${fromId} → ${toId}, date=${outboundDateStart}, modes=${travelModes}`);
 
-  const resp = await apiGet<DiscoveryResponse>('/discovery/results/batch', params);
+  const resp = await prodApiGet<DiscoveryResponse>('/discovery/results/batch', params);
 
   if (resp.errors?.length) {
     if (__DEV__) console.log(`[Discovery] ${toId} errors: ${resp.errors.map((e) => e.message).join(', ')}`);
@@ -98,7 +98,7 @@ export async function getDiscoveryPricesByDaytime(
 
   if (__DEV__) console.log(`[Discovery/daytime] ${fromId} → ${toId}, date=${outboundDateStart}, modes=${travelModes}`);
 
-  const resp = await apiGet<DiscoveryResponse>('/discovery/results/batch', params);
+  const resp = await prodApiGet<DiscoveryResponse>('/discovery/results/batch', params);
 
   if (resp.errors?.length) {
     if (__DEV__) console.log(`[Discovery/daytime] ${toId} errors: ${resp.errors.map((e) => e.message).join(', ')}`);
