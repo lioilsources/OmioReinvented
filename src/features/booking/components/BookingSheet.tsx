@@ -138,20 +138,23 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: spacing.md,
+    alignItems: 'center',
     gap: spacing.md,
   },
   title: {
     fontSize: fontSize.lg,
     fontWeight: '700',
     color: colors.text,
+    textAlign: 'center',
     paddingBottom: spacing.sm,
   },
   stepper: {
+    alignSelf: 'center',
     gap: 0,
   },
   step: {
     flexDirection: 'row',
-    alignItems: 'flex-start',
+    alignItems: 'center',
     minHeight: 40,
   },
   stepIndicator: {
@@ -193,7 +196,6 @@ const styles = StyleSheet.create({
   stepLabel: {
     fontSize: fontSize.md,
     marginLeft: spacing.sm,
-    paddingTop: 3,
   },
   stepLabelDone: {
     color: colors.success,
