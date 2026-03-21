@@ -12,6 +12,7 @@ interface JourneySheetProps {
   isPolling: boolean;
   destination: Destination | null;
   originName: string;
+  onJourneyPress?: (journey: Journey) => void;
 }
 
 export function JourneySheet({
@@ -19,6 +20,7 @@ export function JourneySheet({
   isPolling,
   destination,
   originName,
+  onJourneyPress,
 }: JourneySheetProps) {
   const { sorted, sortMode, setSortMode } = useJourneySort(journeys, 'timetable');
 
@@ -50,7 +52,12 @@ export function JourneySheet({
       <BottomSheetFlatList
         data={sorted}
         keyExtractor={(item: Journey) => item.id}
-        renderItem={({ item }: { item: Journey }) => <JourneyCard journey={item} />}
+        renderItem={({ item }: { item: Journey }) => (
+          <JourneyCard
+            journey={item}
+            onPress={onJourneyPress ? () => onJourneyPress(item) : undefined}
+          />
+        )}
         ListEmptyComponent={
           isPolling ? (
             <View style={styles.empty}>

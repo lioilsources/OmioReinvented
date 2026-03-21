@@ -10,6 +10,7 @@ export interface SearchCarrier {
 }
 
 export interface SearchOutbound {
+  id?: string;
   departureTime: string;
   arrivalTime: string;
   durationMinutes: number;

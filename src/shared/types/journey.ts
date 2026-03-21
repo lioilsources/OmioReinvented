@@ -11,6 +11,8 @@ export interface JourneyLeg {
 
 export interface Journey {
   id: string;
+  searchId: string;
+  outboundId: string;
   provider: string;
   departure: string;
   arrival: string;

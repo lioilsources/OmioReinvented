@@ -107,6 +107,8 @@ export function generateJourneys(
 
     journeys.push({
       id: `${destinationId}-${date}-${i}`,
+      searchId: '',
+      outboundId: '',
       provider,
       departure,
       arrival,

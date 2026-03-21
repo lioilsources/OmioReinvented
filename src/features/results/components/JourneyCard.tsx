@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { TransportIcon } from '@/shared/components/TransportIcon';
 import { JourneyLeg } from './JourneyLeg';
 import { colors, borderRadius, fontSize, spacing } from '@/shared/constants/theme';
@@ -8,6 +8,7 @@ import { useSearchStore } from '@/stores/useSearchStore';
 
 interface JourneyCardProps {
   journey: Journey;
+  onPress?: () => void;
 }
 
 function formatTime(iso: string): string {
@@ -22,7 +23,7 @@ function formatDuration(minutes: number): string {
   return m > 0 ? `${h}h ${m}m` : `${h}h`;
 }
 
-export function JourneyCard({ journey }: JourneyCardProps) {
+export function JourneyCard({ journey, onPress }: JourneyCardProps) {
   const pax = useSearchStore((s) => s.pax);
   const getTotalPrice = useSearchStore((s) => s.getTotalPrice);
   const pricePerPax = journey.price;
@@ -37,7 +38,7 @@ export function JourneyCard({ journey }: JourneyCardProps) {
   const totalPrice = Math.round((adultCost + childCost) * 100) / 100;
 
   return (
-    <View style={styles.card}>
+    <Pressable style={styles.card} onPress={onPress} disabled={!onPress}>
       {journey.destinationName && (
         <Text style={styles.route}>Prague → {journey.destinationName}</Text>
       )}
@@ -75,7 +76,7 @@ export function JourneyCard({ journey }: JourneyCardProps) {
           ))}
         </View>
       )}
-    </View>
+    </Pressable>
   );
 }
 

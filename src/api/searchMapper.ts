@@ -73,6 +73,8 @@ export function mapSearchResponse(response: SearchResponse): Journey[] {
 
       return {
         id: sj.id,
+        searchId: response.searchId,
+        outboundId: ob.id ?? '',
         provider,
         departure: ob.departureTime,
         arrival: ob.arrivalTime,
